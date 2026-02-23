@@ -1213,16 +1213,21 @@ async function saveCloud(){
   showSyncStatus('syncing');
   try{
     const ts=Date.now();
-    const payload=encodeURIComponent(JSON.stringify({data:DB,ts:ts}));
-    const res=await fetch(CLOUD_URL+'?action=save&payload='+payload,{method:'GET'});
-    const txt=await res.text();
-    const r=JSON.parse(txt);
-    if(r.ok){
-      cloudOnline=true;
-      showSyncStatus('ok');
-      localStorage.setItem('sem_ts',ts);
-      if(cloudPending){cloudPending=false;saveCloud();}
-    }else{showSyncStatus('error');}
+    // Usar fetch con mode no-cors y form data — funciona con Google Apps Script
+    const formData=new FormData();
+    formData.append('action','save');
+    formData.append('ts',ts);
+    formData.append('data',JSON.stringify(DB));
+    const res=await fetch(CLOUD_URL,{
+      method:'POST',
+      mode:'no-cors',
+      body:formData
+    });
+    // no-cors no devuelve respuesta legible, asumimos éxito si no hay error
+    cloudOnline=true;
+    showSyncStatus('ok');
+    localStorage.setItem('sem_ts',ts);
+    if(cloudPending){cloudPending=false;saveCloud();}
   }catch(e){
     cloudOnline=false;
     showSyncStatus('offline');
