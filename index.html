@@ -1212,17 +1212,15 @@ async function saveCloud(){
   cloudSaving=true;
   showSyncStatus('syncing');
   try{
-    const res=await fetch(CLOUD_URL,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'save',data:DB,ts:Date.now()})
-    });
+    const ts=Date.now();
+    const payload=encodeURIComponent(JSON.stringify({data:DB,ts:ts}));
+    const res=await fetch(CLOUD_URL+'?action=save&payload='+payload,{method:'GET'});
     const txt=await res.text();
     const r=JSON.parse(txt);
     if(r.ok){
       cloudOnline=true;
       showSyncStatus('ok');
-      localStorage.setItem('sem_ts',Date.now());
+      localStorage.setItem('sem_ts',ts);
       if(cloudPending){cloudPending=false;saveCloud();}
     }else{showSyncStatus('error');}
   }catch(e){
