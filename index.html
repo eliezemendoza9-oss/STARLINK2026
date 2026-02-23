@@ -260,12 +260,28 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
 }
 
 /* ═══════════════════ CHAT IA ═══════════════════ */
+/* Desktop: esquina inferior derecha */
 .ai-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:800;
   width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
   background:linear-gradient(135deg,#00ffff,#bf00ff);
   box-shadow:0 4px 24px rgba(0,255,255,.5),0 0 0 3px rgba(0,255,255,.2);
   font-size:1.5rem;transition:all .25s;display:flex;align-items:center;justify-content:center;}
 .ai-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(0,255,255,.7);}
+/* Barra inferior fija en móvil con botón IA siempre visible */
+.ai-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:700;
+  background:rgba(6,11,24,.97);border-top:2px solid rgba(0,255,255,.3);
+  padding:.4rem .75rem;backdrop-filter:blur(20px);
+  align-items:center;gap:.5rem;}
+.ai-bar-btn{flex:1;background:linear-gradient(135deg,rgba(0,255,255,.15),rgba(191,0,255,.15));
+  border:1px solid rgba(0,255,255,.35);border-radius:12px;
+  color:var(--accent);cursor:pointer;font-family:'Exo 2',sans-serif;
+  font-size:.88rem;font-weight:700;padding:.6rem .75rem;
+  display:flex;align-items:center;gap:.5rem;justify-content:center;
+  letter-spacing:.5px;transition:all .18s;}
+.ai-bar-btn:active{background:rgba(0,255,255,.25);transform:scale(.98);}
+.ai-bar-btn .ai-bar-ico{font-size:1.3rem;animation:ai-pulse 2.5s infinite;}
+@keyframes ai-pulse{0%,100%{filter:drop-shadow(0 0 4px #00ffff)}50%{filter:drop-shadow(0 0 10px #bf00ff)}}
+.ai-bar-hint{font-size:.65rem;color:var(--muted2);white-space:nowrap;}
 .ai-panel{position:fixed;bottom:0;right:0;z-index:850;
   width:420px;max-width:100vw;height:600px;max-height:92vh;
   background:rgba(6,11,24,.98);border:1px solid var(--border2);
@@ -314,7 +330,14 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
   border-radius:10px;width:40px;height:40px;cursor:pointer;font-size:1rem;
   display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
 .ai-send:disabled{opacity:.4;cursor:not-allowed;}
-@media(max-width:680px){.ai-panel{width:100%;}.ai-btn{bottom:1rem;right:.85rem;}}
+@media(max-width:800px){
+  /* En móvil: ocultar botón flotante, mostrar barra inferior */
+  .ai-btn{display:none;}
+  .ai-bar{display:flex;}
+  .ai-panel{width:100%;border-radius:20px 20px 0 0;}
+  /* Dar espacio al contenido para la barra */
+  .main-content{padding-bottom:72px;}
+}
 </style>
 </head>
 <body>
@@ -3147,6 +3170,28 @@ ${DB.gastos.slice(0,15).map(g=>`${g.fecha} | ${g.desc} | $${g.monto.toFixed(2)} 
   }catch(e){return 'Error leyendo datos: '+e.message;}
 }
 
+
+// ─── Detectar intención del mensaje ───
+function detectIntent(q){
+  const ql=q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const intents=[
+    {id:'cajero',  keys:['cajero','turno','quien atiende','quien esta','encargad','trabaja','sesion','atiende','operando'],label:'👤 Cajero en turno'},
+    {id:'ventas',  keys:['venta','vendí','vendi','vendiste','vendio','cobr','factura','vend','ingres','recaud','dinero entr'],label:'💰 Ventas'},
+    {id:'caja',    keys:['caja','efectivo','cuanto hay','cuanto tien','dinero','saldo','billetes','monedas','arqueo'],label:'💵 Estado de caja'},
+    {id:'starlink',keys:['starlink','internet','conexion','sesion','wifi','megas','bloque','manana','tarde'],label:'🛰️ Starlink'},
+    {id:'deudas',  keys:['deb','debe','cobrar','fiado','credito','prestamo','fian','pendiente','quien me deb'],label:'💸 Cobros/Deudas'},
+    {id:'stock',   keys:['stock','inventario','producto','queda','quedo','agotado','falta','escasez','existencia'],label:'📦 Inventario'},
+    {id:'gastos',  keys:['gasto','egreso','pague','pago','compre','compra','gaste','cost','erogo'],label:'📤 Gastos'},
+    {id:'clientes',keys:['cliente','comprador','quien compra','mejor client'],label:'👥 Clientes'},
+    {id:'resumen', keys:['resumen','como va','como estuvo','reporte','balance','total','todo','general'],label:'📊 Resumen general'},
+    {id:'proveedor',keys:['proveedor','suppli','vendor','quien me vende','compro a'],label:'🏭 Proveedores'},
+    {id:'prestamo',keys:['preste','di prestado','di un prestamo','prestamo dado','recibí prestamo','me prestaron'],label:'💳 Préstamos'},
+    {id:'top',     keys:['mas se vende','top','popular','mejor','mas vendid','favorit'],label:'🏆 Top productos'},
+  ];
+  const matched=intents.filter(i=>i.keys.some(k=>ql.includes(k)));
+  return matched.length?matched:null;
+}
+
 async function sendAIMsg(){
   const inp=$('ai-inp');
   const txt=(inp?.value||'').trim();
@@ -3156,24 +3201,44 @@ async function sendAIMsg(){
   aiHistory.push({role:'user',content:txt});
   aiTyping=true;
   const sb=$('ai-send');if(sb)sb.disabled=true;
-  const tid=addAIMsg('bot','Analizando datos... ✦','think-'+Date.now());
+
+  // Detectar intención y mostrar feedback
+  const intents=detectIntent(txt);
+  const intentFeedback=intents
+    ?`*Entendí que preguntas sobre: ${intents.map(i=>i.label).join(', ')}*\n\n`
+    :'';
+
+  const tid=addAIMsg('bot','Analizando... ✦','think-'+Date.now());
   try{
     const ctx=buildCtx();
-    const sys=`Eres SEM Assistant, asistente inteligente de SERVICIOSEM (Boca de Remedios, Comarca Ngäbe-Buglé, Panamá). Dueño: Eliezer Mendoza.
+    const sys=`Eres SEM Assistant, asistente inteligente personal de SERVICIOSEM.
+Negocio: Boca de Remedios, Comarca Ngäbe-Buglé, Panamá. Dueño: Eliezer Mendoza.
 
-DATOS COMPLETOS DEL NEGOCIO AHORA MISMO:
+DATOS COMPLETOS Y ACTUALES DEL NEGOCIO:
 ${ctx}
 
-REGLAS:
-1. Responde siempre en español
-2. Usa ÚNICAMENTE los datos de arriba — nunca inventes
-3. Para cajero en turno: mira "SESIÓN ACTIVA" y "CAJEROS REGISTRADOS"  
-4. Para deudas: mira "CUENTAS POR COBRAR" y "PRÉSTAMOS"
-5. Para stock: mira "CATÁLOGO" e "INVENTARIO"
-6. Usa **negritas** para cifras y nombres clave
-7. Si el dato no está en los datos: di "No tengo ese dato registrado"
-8. Moneda: Balboa panameño = USD $
-9. Puedes dar recomendaciones y análisis basados en los datos reales`;
+INSTRUCCIONES CRÍTICAS:
+1. Responde SIEMPRE en español natural y amigable
+2. USA ÚNICAMENTE los datos de arriba — NUNCA inventes cifras ni nombres
+3. SIEMPRE empieza confirmando brevemente qué entendiste que preguntaron (1 línea)
+   Ejemplo: "Entiendo que quieres saber sobre el cajero en turno 👤"
+4. Luego da la respuesta completa y detallada
+5. Para "cajero/turno/quien atiende" → usa la sección "SESIÓN ACTIVA"
+6. Para palabras sueltas o cortas → infiere el contexto más lógico para un negocio
+7. Si una palabra tiene múltiples significados posibles → responde TODOS los relacionados
+8. Palabras clave y sus temas:
+   - caja/efectivo/dinero → estado de caja
+   - starlink/internet/conexion → sesiones starlink  
+   - debe/fiado/cobrar → cuentas por cobrar
+   - stock/producto/queda → inventario
+   - turno/cajero/quien → sesión activa
+   - gasto/egreso/pague → gastos
+   - venta/vendí/cobré → ventas
+   - resumen/total/balance → resumen completo
+9. Usa **negritas** para cifras y nombres importantes
+10. Moneda: Balboa panameño = USD $
+11. Si el dato no existe en los datos: dilo claramente sin inventar`;
+
     const msgs=[...aiHistory.slice(-8)];
     if(!msgs.length||msgs[msgs.length-1].role!=='user')msgs.push({role:'user',content:txt});
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -3183,56 +3248,121 @@ REGLAS:
     });
     const data=await res.json();
     const reply=(data.content||[]).map(c=>c.type==='text'?c.text:'').join('').trim();
-    if(reply){updateAIMsg(tid,reply);aiHistory.push({role:'assistant',content:reply});if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);}
-    else{updateAIMsg(tid,localAI(txt));}
-  }catch(e){updateAIMsg(tid,localAI(txt));}
+    if(reply){
+      updateAIMsg(tid,reply);
+      aiHistory.push({role:'assistant',content:reply});
+      if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
+    }else{
+      updateAIMsg(tid,intentFeedback+localAI(txt));
+    }
+  }catch(e){
+    updateAIMsg(tid,intentFeedback+localAI(txt));
+  }
   aiTyping=false;if(sb)sb.disabled=false;
 }
-function askAI(q){const i=$('ai-inp');if(i)i.value=q;sendAIMsg();}
+function askAI(q){const i=$('ai-inp');if(i){i.value=q;aiAutoResize(i);}sendAIMsg();}
 
 function localAI(q){
   const ql=q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const now=new Date(),hoyStr=now.toDateString(),hoyF=hoy(),A=calcArqueoHoy();
-  const tL2={manana:'Mañana (8am-3pm)',tarde:'Tarde (3pm-10pm)',completo:'Completo (8am-10pm)'};
-  // Cajero en turno
-  if(ql.match(/cajero|turno|quien atiende|quien esta|encargad|trabaja|sesion/)){
-    if(!SES.cajId)return`⚠️ **Sin sesión activa.** Nadie ha iniciado turno.\nTodos los cajeros:\n${DB.cajeros.map(c=>`· ${c.nombre} (${c.rol})`).join('\n')}`;
-    const caj=DB.cajeros.find(c=>c.id===SES.cajId);
-    return`👤 **Cajero en turno:**\n\n**${SES.cajNom}**\nTurno: ${tL2[SES.trn]||SES.trn}\nRol: ${caj?.rol||'—'}\nInició: ${SES.ini?new Date(SES.ini).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'—'}`;
+  const tL2={manana:'Mañana(8am-3pm)',tarde:'Tarde(3pm-10pm)',completo:'Completo(8am-10pm)'};
+
+  // Recopilar todas las respuestas relevantes según palabras clave
+  const respuestas=[];
+
+  // CAJERO EN TURNO
+  if(ql.match(/cajero|turno|quien|atiende|encargad|trabaja|sesion|operando|abierto/)){
+    if(!SES.cajId){
+      respuestas.push(`👤 *Entendí: cajero en turno*\n\n⚠️ **Sin sesión activa** — nadie ha iniciado turno.\n\nCajeros disponibles:\n${DB.cajeros.filter(c=>c.activo).map(c=>`· **${c.nombre}** (${c.rol})`).join('\n')}`);
+    }else{
+      const caj=DB.cajeros.find(c=>c.id===SES.cajId);
+      const tHoy=DB.turnos.filter(t=>new Date(t.apertura).toDateString()===hoyStr);
+      respuestas.push(`👤 *Entendí: sesión activa*\n\nCajero en turno ahora: **${SES.cajNom}**\nTurno: **${tL2[SES.trn]||SES.trn}**\nRol: ${caj?.rol||'—'}\nInició: ${SES.ini?new Date(SES.ini).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'—'}\n\nTurnos de hoy: ${tHoy.length}\n${tHoy.map(t=>`· ${t.cajNom} ${tL2[t.trn]||t.trn} — ${t.estado}`).join('\n')}`);
+    }
   }
-  // Ventas hoy
-  if(ql.match(/vend|ingres/)&&ql.match(/hoy|dia|today/)){
+
+  // VENTAS — cualquier mención
+  if(ql.match(/venta|vend|cobr|ingres|factur|vendi|vendio/)){
     const vH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
     const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
-    return`📊 **Ventas de hoy:**\n\nVentas: **${vH.length}** = **$${vH.reduce((s,v)=>s+v.total,0).toFixed(2)}**\nStarlink: **${sH.length}** = **$${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\nNETO: **$${A.neto.toFixed(2)}**`;
+    const vMes=DB.ventas.filter(v=>{const d=new Date(v.fecha);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+    respuestas.push(`💰 *Entendí: ventas*\n\n**Hoy:** ${vH.length} ventas = **$${vH.reduce((s,v)=>s+v.total,0).toFixed(2)}**\n**Starlink hoy:** ${sH.length} sesiones = **$${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\n**Total mes:** $${vMes.reduce((s,v)=>s+v.total,0).toFixed(2)}\n**NETO hoy:** $${A.neto.toFixed(2)}`);
   }
-  // Caja
-  if(ql.match(/caja|efectivo|cuanto hay|dinero/))
-    return`💵 **Caja:**\nEfectivo: **$${A.efectivo.toFixed(2)}**\nTransferencias: **$${A.transfer.toFixed(2)}**\nIngresos: **$${A.ingresoTotal.toFixed(2)}**\nEgresos: **$${A.egresoTotal.toFixed(2)}**\n**NETO: $${A.neto.toFixed(2)}**`;
-  // Deudas
-  if(ql.match(/deb|cobrar|fiado|deben|pendiente/)){
+
+  // CAJA
+  if(ql.match(/caja|efectivo|cuanto hay|dinero|saldo|billetes|moneda|arqueo/)){
+    respuestas.push(`💵 *Entendí: estado de caja*\n\nEfectivo: **$${A.efectivo.toFixed(2)}**\nTransferencias: **$${A.transfer.toFixed(2)}**\nIngresos totales: **$${A.ingresoTotal.toFixed(2)}**\nEgresos: **$${A.egresoTotal.toFixed(2)}**\n**NETO: $${A.neto.toFixed(2)}** ${A.neto>=0?'✅':'⚠️ Negativo'}`);
+  }
+
+  // STARLINK
+  if(ql.match(/starlink|internet|conexion|wifi|bloque|megas/)){
+    const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
+    const sM=DB.slVentas.filter(v=>{const d=new Date(v.fecha+'T00:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+    respuestas.push(`🛰️ *Entendí: Starlink/Internet*\n\n**Hoy:** ${sH.length} sesiones = **$${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\n· Mañana: ${sH.filter(v=>v.bl==='manana').length} · Tarde: ${sH.filter(v=>v.bl==='tarde').length}\n**Este mes:** ${sM.length} sesiones = **$${sM.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\n**Histórico:** ${DB.slVentas.length} sesiones total`);
+  }
+
+  // DEUDAS / COBROS
+  if(ql.match(/deb|cobrar|fiado|credito|pend|fian|quien me deb|me deben/)){
     const pc=DB.ventas.filter(v=>['fiado','credito','parcial'].includes(v.estado));
     const pr=DB.prestamos.filter(p=>p.tipo==='dado'&&p.estado!=='pagado');
-    return`💸 **Por cobrar:**\n\nVentas: ${pc.length} = **$${pc.reduce((s,v)=>s+(v.total-(v.abonado||0)),0).toFixed(2)}**\n${pc.map(v=>`· ${v.cliNom}: $${(v.total-(v.abonado||0)).toFixed(2)}`).join('\n')}\n\nPréstamos dados: ${pr.length} = **$${pr.reduce((s,p)=>s+p.saldo,0).toFixed(2)}**\n${pr.map(p=>`· ${p.per}: $${p.saldo.toFixed(2)}`).join('\n')}`;
+    const totPC=pc.reduce((s,v)=>s+(v.total-(v.abonado||0)),0);
+    const totPR=pr.reduce((s,p)=>s+p.saldo,0);
+    let r=`💸 *Entendí: cobros pendientes*\n\n`;
+    if(pc.length){r+=`**Ventas por cobrar (${pc.length}) — $${totPC.toFixed(2)}:**\n${pc.map(v=>`· **${v.cliNom}**: $${(v.total-(v.abonado||0)).toFixed(2)} (${v.estado})`).join('\n')}\n\n`;}
+    else{r+=`✅ Sin ventas pendientes\n\n`;}
+    if(pr.length){r+=`**Préstamos por cobrar (${pr.length}) — $${totPR.toFixed(2)}:**\n${pr.map(p=>`· **${p.per}**: $${p.saldo.toFixed(2)}${p.venc?' vence:'+p.venc:''}`).join('\n')}`;}
+    else{r+=`✅ Sin préstamos pendientes`;}
+    respuestas.push(r);
   }
-  // Stock
-  if(ql.match(/stock|inventario|producto|queda/)){
-    const b=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=p.smin);
+
+  // INVENTARIO / STOCK
+  if(ql.match(/stock|inventario|producto|queda|quedo|agotad|falta|escasez|existencia/)){
+    const b=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock>0&&p.stock<=p.smin);
     const a=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=0);
-    return`📦 **Inventario:**\n${a.length?`🔴 Agotados(${a.length}): ${a.map(p=>p.nombre).join(', ')}\n`:''}${b.length?`⚠️ Stock bajo(${b.length}):\n${b.map(p=>`· ${p.nombre}: ${p.stock}(mín:${p.smin})`).join('\n')}`:'✅ Inventario bien abastecido'}`;
+    const todos=DB.productos.filter(p=>p.activo&&p.cat!=='internet');
+    respuestas.push(`📦 *Entendí: inventario/stock*\n\nTotal productos: **${todos.length}**\nValor en inventario: **$${todos.reduce((s,p)=>s+(p.stock||0)*(p.costo||0),0).toFixed(2)}**\n\n${a.length?`🔴 **Agotados(${a.length}):** ${a.map(p=>p.nombre).join(', ')}\n`:''}${b.length?`⚠️ **Stock bajo(${b.length}):**\n${b.map(p=>`· ${p.nombre}: ${p.stock} uds (mín:${p.smin})`).join('\n')}`:'✅ Todo bien abastecido'}`);
   }
-  // Starlink
-  if(ql.match(/starlink|internet|conexion|sesion/)){
-    const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
-    return`🛰️ **Starlink hoy:**\nMañana: ${sH.filter(v=>v.bl==='manana').length} | Tarde: ${sH.filter(v=>v.bl==='tarde').length}\nTotal: **${sH.length}** = **$${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\nHistórico: ${DB.slVentas.length} sesiones`;
+
+  // GASTOS
+  if(ql.match(/gasto|egreso|pague|compre|gaste|costo|erogo|pago/)){
+    const gH=DB.gastos.filter(g=>g.fecha===hoyF);
+    const gM=DB.gastos.filter(g=>{const d=new Date(g.fecha);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+    respuestas.push(`📤 *Entendí: gastos*\n\n**Hoy:** $${gH.reduce((s,g)=>s+g.monto,0).toFixed(2)}\n${gH.map(g=>`· ${g.desc}: $${g.monto.toFixed(2)}`).join('\n')||'· Ninguno hoy'}\n\n**Este mes:** $${gM.reduce((s,g)=>s+g.monto,0).toFixed(2)} (${gM.length} registros)`);
   }
-  // Resumen
-  if(ql.match(/resumen|como va|reporte|balance/)){
+
+  // CLIENTES
+  if(ql.match(/client|comprador|quien compra/)){
+    const top=[...DB.clientes].sort((a,b)=>(b.totalGastado||0)-(a.totalGastado||0)).slice(0,5);
+    const fiado=DB.clientes.filter(c=>c.fiado>0);
+    respuestas.push(`👥 *Entendí: clientes*\n\nTotal: **${DB.clientes.length}** clientes\n\n**Top 5:**\n${top.map((c,i)=>`${i+1}. **${c.nombre}** — $${(c.totalGastado||0).toFixed(2)}`).join('\n')||'Sin datos'}\n\n${fiado.length?`Con fiado: ${fiado.map(c=>c.nombre+' $'+c.fiado.toFixed(2)).join(', ')}`:'✅ Sin fiados pendientes'}`);
+  }
+
+  // RESUMEN
+  if(ql.match(/resumen|como va|reporte|balance|todo|general|panorama/)){
     const vH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
     const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
-    return`📊 **Resumen del día**\n👤 Cajero: **${SES.cajNom||'Sin sesión'}** ${SES.trn?'('+tL2[SES.trn]+')':''}\n💰 Ventas: ${vH.length} = $${vH.reduce((s,v)=>s+v.total,0).toFixed(2)}\n🛰️ Starlink: ${sH.length} = $${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}\n📤 Gastos: $${A.egresoTotal.toFixed(2)}\n**NETO: $${A.neto.toFixed(2)}** ${A.neto>0?'📈':'⚠️'}`;
+    respuestas.push(`📊 *Entendí: resumen del día*\n\n👤 Cajero: **${SES.cajNom||'Sin sesión'}** ${SES.trn?'('+tL2[SES.trn]+')':''}\n💰 Ventas: **${vH.length}** = $${vH.reduce((s,v)=>s+v.total,0).toFixed(2)}\n🛰️ Starlink: **${sH.length}** = $${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}\n📤 Gastos: $${A.egresoTotal.toFixed(2)}\n\n**NETO: $${A.neto.toFixed(2)}** ${A.neto>0?'📈 Buen día!':A.neto===0?'🔄 En cero':'⚠️ En pérdida'}`);
   }
-  return`🤖 Puedo responder sobre:\n👤 Cajero en turno · 💰 Ventas hoy · 💵 Caja · ⚠️ Stock · 💸 Deudas · 🛰️ Starlink · 📊 Resumen del día\n\n*Sin internet uso datos locales del dispositivo.*`;
+
+  // TOP PRODUCTOS
+  if(ql.match(/top|mas se vend|mejor|popular|mas vendid/)){
+    const pv={};DB.ventas.forEach(v=>(v.items||[]).forEach(i=>{if(!pv[i.nom])pv[i.nom]={q:0,t:0};pv[i.nom].q+=i.qty;pv[i.nom].t+=i.sub;}));
+    const top=Object.entries(pv).sort((a,b)=>b[1].q-a[1].q).slice(0,5);
+    respuestas.push(`🏆 *Entendí: productos más vendidos*\n\n${top.map((p,i)=>`${i+1}. **${p[0]}** — ${p[1].q} uds / $${p[1].t.toFixed(2)}`).join('\n')||'Sin historial de ventas aún'}`);
+  }
+
+  // PRÉSTAMOS específico
+  if(ql.match(/preste|di prestado|prestamo dado|recib.*prestamo|me prestaron|cuanto preste/)){
+    const dados=DB.prestamos.filter(p=>p.tipo==='dado');
+    const recib=DB.prestamos.filter(p=>p.tipo==='recibido');
+    respuestas.push(`💳 *Entendí: préstamos*\n\n**Dados (me deben) — ${dados.length}:**\n${dados.map(p=>`· **${p.per}**: $${p.monto.toFixed(2)} | Saldo:$${(p.saldo||0).toFixed(2)} | ${p.estado}`).join('\n')||'· Ninguno'}\n\n**Recibidos (debo yo) — ${recib.length}:**\n${recib.map(p=>`· **${p.per}**: $${p.monto.toFixed(2)} | Saldo:$${(p.saldo||0).toFixed(2)} | ${p.estado}`).join('\n')||'· Ninguno'}`);
+  }
+
+  if(respuestas.length>0) return respuestas.join('\n\n---\n\n');
+
+  // Si no matchea nada — dar resumen general corto
+  const vH2=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
+  return`🤖 No entendí exactamente qué buscas, pero aquí va un resumen rápido:\n\n👤 Turno: **${SES.cajNom||'Sin sesión'}**\n💰 Ventas hoy: **${vH2.length}** = $${vH2.reduce((s,v)=>s+v.total,0).toFixed(2)}\n💵 NETO: **$${A.neto.toFixed(2)}**\n\nPuedes preguntarme sobre: *ventas, caja, starlink, deudas, stock, gastos, cajero, clientes, préstamos, resumen*`;
 }
 // ═══════════════════════════════════════════════════════════
 // INIT
@@ -3261,6 +3391,16 @@ if(document.readyState==='loading'){
 
 <!-- CHAT IA -->
 <button class="ai-btn" onclick="toggleAI()" title="Asistente IA SERVICIOSEM">🤖</button>
+<!-- BARRA IA MÓVIL — siempre visible -->
+<div class="ai-bar" id="ai-bar">
+  <button class="ai-bar-btn" onclick="toggleAI()">
+    <span class="ai-bar-ico">🤖</span>
+    <div>
+      <div>SEM Assistant · IA</div>
+      <div class="ai-bar-hint">Toca para preguntar sobre tu negocio</div>
+    </div>
+  </button>
+</div>
 <div class="ai-panel" id="ai-panel">
   <div class="ai-hdr">
     <div class="ai-hdr-av">🤖</div>
