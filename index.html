@@ -338,6 +338,14 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
   /* Dar espacio al contenido para la barra */
   .main-content{padding-bottom:72px;}
 }
+
+/* ═══ SYNC STATUS ═══ */
+.sync-bar{display:flex;align-items:center;gap:.4rem;padding:.18rem .75rem;
+  background:rgba(0,255,255,.04);border-bottom:1px solid var(--border);
+  font-size:.65rem;color:var(--muted2);flex-shrink:0;min-height:22px;}
+.sync-bar button{background:none;border:none;color:var(--muted2);cursor:pointer;
+  font-size:.65rem;padding:.1rem .35rem;border-radius:4px;transition:all .15s;}
+.sync-bar button:hover{color:var(--accent);background:rgba(0,255,255,.08);}
 </style>
 </head>
 <body>
@@ -367,6 +375,13 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
     <button class="btn bd bsm" onclick="cerrarSesion()" title="Cerrar sesión">🔴 Salir</button>
   </div>
 </header>
+<!-- BARRA DE SINCRONIZACIÓN -->
+<div class="sync-bar">
+  <span id="sync-status">🔄 <span style="color:var(--accent3);font-size:.65rem;font-weight:700">Conectando...</span></span>
+  <span style="flex:1"></span>
+  <button onclick="syncNow()">🔄 Guardar nube</button>
+  <button onclick="loadFromCloud(true)">⬇️ Cargar nube</button>
+</div>
 
 <!-- NAV -->
 <div class="app-body">
@@ -1168,7 +1183,62 @@ function loadDB(){
   DB.nextId={caj:3,cli:3,prod:6,prov:1,vta:1,sl:1,gas:1,pre:1,trn:1};
   saveDB();
 }
-function saveDB(){localStorage.setItem('sem_v3',JSON.stringify(DB));try{localStorage.setItem('sem_ses',JSON.stringify(SES));}catch(e){}}
+
+// ═══ JSONBIN CONFIG ═══
+const JB_BIN = '699bd508ae596e708f412a2a';
+const JB_KEY = '$2a$10$ksRFB2Sp9CGhTo48PstwzORcZMaMD0mZTE.2BK2rA1/NPOysS6WSS';
+const JB_URL = 'https://api.jsonbin.io/v3/b/'+JB_BIN;
+let jbSaving=false;let jbPending=false;let jbOnline=false;
+
+// Guardar local siempre (rápido)
+function saveLocal(){
+  try{localStorage.setItem('sem_v3',JSON.stringify(DB));localStorage.setItem('sem_ses',JSON.stringify(SES));localStorage.setItem('sem_ts',Date.now());}catch(e){}
+}
+
+// Guardar en nube (con debounce 1.5s para no saturar)
+let jbTimer=null;
+function saveDB(){
+  saveLocal();
+  clearTimeout(jbTimer);
+  jbTimer=setTimeout(saveCloud,1500);
+}
+
+async function saveCloud(){
+  if(jbSaving){jbPending=true;return;}
+  jbSaving=true;
+  showSyncStatus('syncing');
+  try{
+    const res=await fetch(JB_URL,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JB_KEY,'X-Bin-Versioning':'false'},
+      body:JSON.stringify({db:DB,ts:Date.now()})
+    });
+    if(res.ok){
+      jbOnline=true;
+      showSyncStatus('ok');
+      if(jbPending){jbPending=false;saveCloud();}
+    }else{
+      showSyncStatus('error');
+    }
+  }catch(e){
+    jbOnline=false;
+    showSyncStatus('offline');
+  }
+  jbSaving=false;
+}
+
+function showSyncStatus(st){
+  const el=document.getElementById('sync-status');
+  if(!el)return;
+  const states={
+    syncing:{ico:'🔄',txt:'Guardando...',col:'var(--accent3)'},
+    ok:{ico:'☁️',txt:'Sincronizado',col:'var(--green)'},
+    error:{ico:'⚠️',txt:'Error al guardar',col:'var(--red)'},
+    offline:{ico:'📴',txt:'Sin internet (local)',col:'var(--muted2)'},
+  };
+  const s=states[st]||states.offline;
+  el.innerHTML=`${s.ico} <span style="color:${s.col};font-size:.65rem;font-weight:700">${s.txt}</span>`;
+}
 ['cajeros','clientes','productos','proveedores','ventas','slVentas','gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
 
 // ═══════════════════════════════════════════════════════════
@@ -3364,6 +3434,89 @@ function localAI(q){
   const vH2=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
   return`🤖 No entendí exactamente qué buscas, pero aquí va un resumen rápido:\n\n👤 Turno: **${SES.cajNom||'Sin sesión'}**\n💰 Ventas hoy: **${vH2.length}** = $${vH2.reduce((s,v)=>s+v.total,0).toFixed(2)}\n💵 NETO: **$${A.neto.toFixed(2)}**\n\nPuedes preguntarme sobre: *ventas, caja, starlink, deudas, stock, gastos, cajero, clientes, préstamos, resumen*`;
 }
+
+// ═══ SYNC FUNCIONES ═══
+async function syncNow(){
+  showSyncStatus('syncing');
+  await saveCloud();
+  toast('☁️ Sincronizado con la nube','success');
+}
+
+async function loadFromCloud(force){
+  showSyncStatus('syncing');
+  try{
+    const res=await fetch(JB_URL+'?meta=false',{
+      headers:{'X-Master-Key':JB_KEY}
+    });
+    if(!res.ok){showSyncStatus('error');return;}
+    const data=await res.json();
+    if(data&&data.record&&data.record.db){
+      const cloudDB=data.record.db;
+      const cloudTs=data.record.ts||0;
+      // Comparar timestamp — tomar el más reciente
+      const localTs=parseInt(localStorage.getItem('sem_ts')||0);
+      if(force||cloudTs>localTs){
+        // La nube tiene datos más nuevos
+        DB=cloudDB;
+        // Asegurar arrays existen
+        ['cajeros','clientes','productos','proveedores','ventas','slVentas',
+         'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
+        saveLocal();
+        localStorage.setItem('sem_ts',cloudTs);
+        jbOnline=true;
+        showSyncStatus('ok');
+        // Refrescar UI
+        if(document.getElementById('pg-dashboard')?.classList.contains('act')) renderDash();
+        toast('☁️ Datos actualizados desde la nube','success');
+      }else{
+        showSyncStatus('ok');
+        toast('✅ Ya tienes los datos más recientes','info');
+      }
+    }
+  }catch(e){
+    jbOnline=false;
+    showSyncStatus('offline');
+    toast('📴 Sin internet — usando datos locales','info');
+  }
+}
+
+// Al iniciar: cargar desde nube automáticamente
+async function initSync(){
+  try{
+    const res=await fetch(JB_URL+'?meta=false',{
+      headers:{'X-Master-Key':JB_KEY}
+    });
+    if(!res.ok)return;
+    const data=await res.json();
+    if(data&&data.record&&data.record.db&&data.record.ts){
+      const cloudDB=data.record.db;
+      const cloudTs=data.record.ts||0;
+      const localTs=parseInt(localStorage.getItem('sem_ts')||0);
+      if(cloudTs>localTs){
+        DB=cloudDB;
+        ['cajeros','clientes','productos','proveedores','ventas','slVentas',
+         'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
+        saveLocal();
+        localStorage.setItem('sem_ts',cloudTs);
+        jbOnline=true;
+        showSyncStatus('ok');
+        // Refrescar UI si ya está cargada
+        setTimeout(()=>{
+          if(document.getElementById('pg-dashboard')?.classList.contains('act')) renderDash();
+          toast('☁️ Datos sincronizados desde la nube','success');
+        },500);
+      }else{
+        jbOnline=true;
+        showSyncStatus('ok');
+        // Si hay datos locales que la nube no tiene, subir
+        if(localTs>0&&localTs>cloudTs) saveCloud();
+      }
+    }
+  }catch(e){
+    jbOnline=false;
+    showSyncStatus('offline');
+  }
+}
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
@@ -3371,6 +3524,7 @@ loadDB();
 // Ensure DOM ready before building grids
 function initApp(){
   buildLoginGrids();
+  initSync(); // Cargar datos desde nube al iniciar
   const h_=new Date().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if($('cc-trn'))$('cc-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
