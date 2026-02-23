@@ -2,12 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#020812">
-<title>SERVICIOSEM</title>
+<title>SERVICIOSEM v3</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -20,8 +19,7 @@
   --glow:0 0 35px rgba(0,255,255,0.35);--r:13px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;}
-body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:16px;-webkit-text-size-adjust:100%;}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:16px;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:radial-gradient(ellipse at 10% 10%,rgba(191,0,255,.25) 0,transparent 55%),
              radial-gradient(ellipse at 90% 90%,rgba(0,255,255,.15) 0,transparent 55%),
@@ -81,7 +79,7 @@ nav::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px;}
 /* MAIN CONTENT */
 .main-content{flex:1;overflow-y:auto;padding:1.2rem;min-width:0;}
 .pg{display:none;animation:fu .28s ease;}
-.pg.act{display:block;min-height:100%;}
+.pg.act{display:block;}
 
 @media(max-width:800px){
   nav{width:56px;padding:.45rem .25rem;}
@@ -261,116 +259,13 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
   .md{padding:1rem;}
 }
 
-/* ═══ PWA / MÓVIL ═══ */
-/* Bottom nav for mobile */
-.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;
-  background:rgba(10,22,40,.98);border-top:1px solid var(--border2);
-  padding:.3rem .2rem calc(.3rem + env(safe-area-inset-bottom));
-  backdrop-filter:blur(20px);}
-.mob-nav-inner{display:flex;justify-content:space-around;align-items:center;max-width:480px;margin:0 auto;}
-.mob-nb{display:flex;flex-direction:column;align-items:center;gap:.1rem;
-  background:none;border:none;color:var(--muted2);cursor:pointer;
-  font-family:'Exo 2',sans-serif;font-size:.55rem;font-weight:700;
-  padding:.35rem .4rem;border-radius:8px;min-width:44px;transition:all .18s;
-  text-transform:uppercase;letter-spacing:.3px;}
-.mob-nb .ico{font-size:1.3rem;line-height:1;}
-.mob-nb.act{color:var(--accent);}
-.mob-nb.act .ico{filter:drop-shadow(0 0 6px var(--accent));}
-.mob-nb-more{position:relative;}
-.mob-more-menu{display:none;position:fixed;bottom:70px;right:.5rem;
-  background:rgba(10,22,40,.98);border:1px solid var(--border2);
-  border-radius:12px;padding:.5rem;min-width:160px;z-index:600;
-  backdrop-filter:blur(20px);}
-.mob-more-menu.show{display:block;}
-.mob-more-item{display:flex;align-items:center;gap:.5rem;
-  background:none;border:none;color:var(--text);cursor:pointer;
-  font-family:'Exo 2',sans-serif;font-size:.82rem;font-weight:600;
-  padding:.55rem .7rem;border-radius:8px;width:100%;text-align:left;transition:all .15s;}
-.mob-more-item:hover,.mob-more-item:active{background:rgba(0,255,255,.08);color:var(--accent);}
-
-/* FAB button */
-.fab{display:none;position:fixed;bottom:80px;right:1rem;z-index:490;
-  width:52px;height:52px;border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border:none;font-size:1.5rem;cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,255,255,.4);transition:all .2s;}
-.fab:active{transform:scale(.92);}
-
-@media(max-width:680px){
-  /* Show mobile nav, hide sidebar */
-  nav{display:none!important;}
-  .mob-nav{display:flex;}
-  .fab{display:flex;align-items:center;justify-content:center;}
-  .app-body{height:calc(100vh - 54px - 28px);flex-direction:column;}
-  .main-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:.65rem .5rem;padding-bottom:80px;min-height:0;}
-  
-  /* Header mobile */
-  header{height:54px;padding:0 .6rem;gap:.4rem;}
-  .logo{font-size:1.25rem;letter-spacing:2px;}
-  .clk{display:none;}
-  .hdr-mid{gap:.3rem;}
-  .caj-nm{font-size:.7rem;}
-  .caj-rl{display:none;}
-  
-  /* Marquee smaller */
-  .mq-s{font-size:.72rem;letter-spacing:2px;}
-  
-  /* Cards single col */
-  .sg{grid-template-columns:repeat(2,1fr)!important;gap:.5rem;}
-  .sc{padding:.75rem .6rem;}
-  .sc-v{font-size:1.4rem;}
-  .sc-l{font-size:.72rem;}
-  
-  /* Tables scroll */
-  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  table{min-width:600px;font-size:.82rem;}
-  thead th{padding:.5rem .6rem;font-size:.72rem;}
-  tbody td{padding:.5rem .6rem;}
-  
-  /* Modals full screen */
-  .mo{padding:0!important;align-items:flex-end!important;}
-  .md{border-radius:18px 18px 0 0!important;max-height:95vh!important;
-    overflow-y:auto!important;padding:1rem!important;width:100%!important;max-width:100%!important;}
-  .md-lg,.md-xl{max-width:100%!important;}
-  
-  /* Forms */
-  .fg{grid-template-columns:1fr!important;}
-  .fgr{margin-bottom:.6rem;}
-  input,select,textarea{font-size:16px!important;} /* Prevent iOS zoom */
-  
-  /* Buttons */
-  .btn{font-size:.82rem;padding:.5rem .8rem;}
-  .ph{flex-direction:column;align-items:flex-start;gap:.5rem;}
-  .ph .fr{flex-wrap:wrap;}
-  
-  /* Page title */
-  .pt{font-size:1.8rem;}
-  
-  /* Arq items */
-  .arq-grid{grid-template-columns:repeat(2,1fr)!important;}
-  
-  /* Denom grid */
-  #denom-grid{grid-template-columns:repeat(2,1fr)!important;}
-  
-  /* Login */
-  .lo{padding:1rem .75rem;}
-  .lo-logo{font-size:2rem;}
-  .lo-box{padding:1.2rem;}
-  .caj-grid{grid-template-columns:repeat(2,1fr)!important;}
-}
-
 /* ═══════════════════ CHAT IA ═══════════════════ */
 .ai-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:800;
-  width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
   background:linear-gradient(135deg,#00ffff,#bf00ff);
   box-shadow:0 4px 24px rgba(0,255,255,.5),0 0 0 3px rgba(0,255,255,.2);
-  font-size:1.6rem;transition:all .25s;display:flex;align-items:center;justify-content:center;}
-.ai-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(0,255,255,.7),0 0 0 5px rgba(0,255,255,.3);}
-.ai-btn .ai-badge{position:absolute;top:-3px;right:-3px;background:var(--accent3);
-  color:#000;border-radius:50%;width:18px;height:18px;font-size:.6rem;
-  font-weight:900;display:flex;align-items:center;justify-content:center;display:none;}
-.ai-btn.has-notif .ai-badge{display:flex;}
-
+  font-size:1.5rem;transition:all .25s;display:flex;align-items:center;justify-content:center;}
+.ai-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(0,255,255,.7);}
 .ai-panel{position:fixed;bottom:0;right:0;z-index:850;
   width:420px;max-width:100vw;height:600px;max-height:92vh;
   background:rgba(6,11,24,.98);border:1px solid var(--border2);
@@ -378,77 +273,48 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
   box-shadow:0 -8px 40px rgba(0,255,255,.2);transform:translateY(110%);
   transition:transform .32s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(24px);}
 .ai-panel.open{transform:translateY(0);}
-
 .ai-hdr{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;
   background:linear-gradient(90deg,rgba(0,255,255,.08),rgba(191,0,255,.08));
   border-bottom:1px solid var(--border2);border-radius:20px 20px 0 0;flex-shrink:0;}
 .ai-hdr-av{width:38px;height:38px;border-radius:50%;
   background:linear-gradient(135deg,#00ffff,#bf00ff);
-  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
-  box-shadow:0 0 12px rgba(0,255,255,.4);flex-shrink:0;}
-.ai-hdr-info{flex:1;min-width:0;}
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.ai-hdr-info{flex:1;}
 .ai-hdr-nm{font-weight:800;font-size:.95rem;color:var(--accent);}
 .ai-hdr-st{font-size:.68rem;color:var(--muted2);display:flex;align-items:center;gap:.3rem;}
-.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
-  animation:pulse-dot 2s infinite;}
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.8);}}
-.ai-hdr-btns{display:flex;gap:.35rem;}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
 .ai-hdr-btn{background:none;border:1px solid var(--border);border-radius:7px;
-  color:var(--muted2);cursor:pointer;padding:.3rem .5rem;font-size:.75rem;transition:all .15s;}
-.ai-hdr-btn:hover{color:var(--accent);border-color:var(--border2);}
-
-.ai-msgs{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.6rem;
-  scroll-behavior:smooth;}
+  color:var(--muted2);cursor:pointer;padding:.3rem .5rem;font-size:.75rem;}
+.ai-msgs{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.6rem;}
 .ai-msgs::-webkit-scrollbar{width:3px;}
 .ai-msgs::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px;}
-
 .ai-msg{max-width:88%;display:flex;flex-direction:column;gap:.15rem;animation:msgIn .2s ease;}
 @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .ai-msg.usr{align-self:flex-end;align-items:flex-end;}
 .ai-msg.bot{align-self:flex-start;align-items:flex-start;}
 .ai-bubble{padding:.6rem .85rem;border-radius:16px;font-size:.88rem;line-height:1.55;word-break:break-word;}
-.ai-msg.usr .ai-bubble{background:linear-gradient(135deg,rgba(0,255,255,.18),rgba(191,0,255,.18));
-  border:1px solid rgba(0,255,255,.25);color:var(--text);border-bottom-right-radius:4px;}
+.ai-msg.usr .ai-bubble{background:linear-gradient(135deg,rgba(0,255,255,.15),rgba(191,0,255,.15));
+  border:1px solid rgba(0,255,255,.2);color:var(--text);border-bottom-right-radius:4px;}
 .ai-msg.bot .ai-bubble{background:rgba(15,30,55,.9);border:1px solid var(--border);
   color:var(--text);border-bottom-left-radius:4px;}
-.ai-msg.bot .ai-bubble.thinking{color:var(--muted2);font-style:italic;
-  animation:thinking-pulse 1.2s ease-in-out infinite;}
-@keyframes thinking-pulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+.ai-msg.bot .ai-bubble.thinking{color:var(--muted2);font-style:italic;animation:thinking-pulse 1.2s infinite;}
+@keyframes thinking-pulse{0%,100%{opacity:.4}50%{opacity:1}}
 .ai-ts{font-size:.6rem;color:var(--muted);margin:0 .35rem;}
-
 .ai-chips{display:flex;flex-wrap:wrap;gap:.4rem;padding:.5rem .75rem;flex-shrink:0;border-top:1px solid var(--border);}
 .ai-chip{background:rgba(0,255,255,.07);border:1px solid var(--border);border-radius:20px;
-  padding:.3rem .75rem;font-size:.72rem;color:var(--muted2);cursor:pointer;
-  transition:all .15s;white-space:nowrap;font-family:'Exo 2',sans-serif;}
-.ai-chip:hover,.ai-chip:active{background:rgba(0,255,255,.15);color:var(--accent);border-color:var(--border2);}
-
-.ai-inp-row{display:flex;gap:.5rem;padding:.65rem .75rem;
-  border-top:1px solid var(--border2);flex-shrink:0;
-  padding-bottom:calc(.65rem + env(safe-area-inset-bottom));}
-.ai-inp{flex:1;background:rgba(15,30,55,.8);border:1px solid var(--border);
-  border-radius:12px;color:var(--text);font-family:'Exo 2',sans-serif;
-  font-size:.88rem;padding:.55rem .85rem;resize:none;height:40px;
-  min-height:40px;max-height:120px;overflow-y:auto;transition:all .15s;}
-.ai-inp:focus{outline:none;border-color:var(--border2);box-shadow:0 0 0 2px rgba(0,255,255,.1);}
-.ai-send{background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border:none;border-radius:10px;width:40px;height:40px;cursor:pointer;
-  font-size:1rem;display:flex;align-items:center;justify-content:center;
-  transition:all .2s;flex-shrink:0;}
-.ai-send:hover{transform:scale(1.08);}
-.ai-send:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-
-/* Tablas en respuesta IA */
-.ai-bubble table{border-collapse:collapse;width:100%;margin:.4rem 0;font-size:.82rem;}
-.ai-bubble th{background:rgba(0,255,255,.12);padding:.3rem .5rem;text-align:left;font-size:.72rem;}
-.ai-bubble td{padding:.25rem .5rem;border-bottom:1px solid rgba(255,255,255,.06);}
-.ai-bubble strong{color:var(--accent3);}
-.ai-bubble .kv{display:flex;justify-content:space-between;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05);}
-.ai-bubble .kv span:last-child{color:var(--accent3);font-weight:700;}
-
-@media(max-width:680px){
-  .ai-panel{width:100%;border-radius:20px 20px 0 0;}
-  .ai-btn{bottom:5rem;right:.85rem;width:52px;height:52px;font-size:1.35rem;}
-}
+  padding:.3rem .75rem;font-size:.72rem;color:var(--muted2);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Exo 2',sans-serif;}
+.ai-chip:hover{background:rgba(0,255,255,.15);color:var(--accent);border-color:var(--border2);}
+.ai-inp-row{display:flex;gap:.5rem;padding:.65rem .75rem;border-top:1px solid var(--border2);flex-shrink:0;}
+.ai-inp{flex:1;background:rgba(15,30,55,.8);border:1px solid var(--border);border-radius:12px;
+  color:var(--text);font-family:'Exo 2',sans-serif;font-size:.88rem;padding:.55rem .85rem;
+  resize:none;height:40px;min-height:40px;max-height:120px;overflow-y:auto;}
+.ai-inp:focus{outline:none;border-color:var(--border2);}
+.ai-send{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;
+  border-radius:10px;width:40px;height:40px;cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.ai-send:disabled{opacity:.4;cursor:not-allowed;}
+@media(max-width:680px){.ai-panel{width:100%;}.ai-btn{bottom:1rem;right:.85rem;}}
 </style>
 </head>
 <body>
@@ -997,14 +863,14 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
         <div style="font-size:.68rem;color:var(--muted2);display:flex;align-items:center;gap:.3rem">
           DESC: <input type="number" id="v-desc" value="0" min="0" max="100" style="width:50px;padding:.12rem .35rem;font-size:.68rem;display:inline-block" oninput="vCalcTotal()"> %
         </div>
-        <div style="font-size:.68rem;color:var(--accent3);display:flex;align-items:center;gap:.3rem;margin-top:.3rem">
-          ITBMS: <select id="v-itbms" onchange="vCalcTotal()" style="font-size:.68rem;padding:.12rem .3rem">
-            <option value="0">0% (Exento)</option>
+        <div style="font-size:.68rem;color:var(--accent3);display:flex;align-items:center;gap:.4rem;margin-top:.3rem">
+          ITBMS: <select id="v-itbms" onchange="vCalcTotal()" style="font-size:.68rem;padding:.12rem .3rem;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px">
+            <option value="0">0% Exento</option>
             <option value="7">7% ITBMS</option>
-            <option value="10">10% (Alcohol/Tabaco)</option>
-            <option value="15">15% (Bebidas)</option>
+            <option value="10">10% Alcohol/Tabaco</option>
+            <option value="15">15% Bebidas</option>
           </select>
-          <span id="v-itbms-monto" style="color:var(--accent3)">$0.00</span>
+          <span id="v-itbms-monto" style="color:var(--accent3);font-weight:700">$0.00</span>
         </div>
       </div>
       <div class="ta" id="v-total">$0.00</div>
@@ -1041,21 +907,7 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
       <button class="btn bpur bsm" onclick="cmpAddItem()" style="align-self:flex-end">+ Add</button>
     </div>
     <div id="cmp-items" style="min-height:36px;margin-bottom:.5rem"></div>
-    <div class="tb">
-      <div>
-        <div style="font-size:.78rem;font-weight:700;color:var(--purple)">SUBTOTAL</div>
-        <div style="font-size:.7rem;color:var(--accent3);display:flex;align-items:center;gap:.3rem;margin-top:.3rem">
-          ITBMS: <select id="cmp-itbms" onchange="cmpCalcTotal()" style="font-size:.7rem;padding:.12rem .3rem">
-            <option value="0">0% (Exento)</option>
-            <option value="7">7% ITBMS</option>
-            <option value="10">10%</option>
-            <option value="15">15%</option>
-          </select>
-          <span id="cmp-itbms-monto" style="color:var(--accent3)">$0.00</span>
-        </div>
-      </div>
-      <div class="ta" id="cmp-total" style="color:var(--purple)">$0.00</div>
-    </div>
+    <div class="tb"><span style="font-size:.85rem;font-weight:700">TOTAL COMPRA</span><div class="ta" id="cmp-total" style="color:var(--purple)">$0.00</div></div>
     <div class="fgr"><label>Notas</label><textarea id="cmp-notas" rows="1" placeholder="Observaciones de la compra..."></textarea></div>
     <div class="fr" style="justify-content:flex-end;margin-top:.75rem">
       <button class="btn bo bsm" onclick="closeMod('mo-compra')">Cancelar</button>
@@ -1649,10 +1501,10 @@ function vDelItem(i){vitems.splice(i,1);vRenderItems();}
 function vCalcTotal(){
   const sub=vitems.reduce((s,i)=>s+i.sub,0);
   const desc=parseFloat($('v-desc').value)||0;
-  const subtDescuento=sub*(1-desc/100);
+  const subtDesc=sub*(1-desc/100);
   const itbmsPct=parseFloat($('v-itbms')?.value||0);
-  const itbmsMonto=subtDescuento*(itbmsPct/100);
-  const tot=subtDescuento+itbmsMonto;
+  const itbmsMonto=subtDesc*(itbmsPct/100);
+  const tot=subtDesc+itbmsMonto;
   if($('v-sub'))$('v-sub').textContent=fmt(sub);
   if($('v-itbms-monto'))$('v-itbms-monto').textContent=fmt(itbmsMonto);
   if($('v-total'))$('v-total').textContent=fmt(tot);
@@ -1857,7 +1709,7 @@ function renderReciboContent(v,ft){
         </div>
         <div style="padding:.3rem .8rem;background:#f8faff;border-top:1px solid #dde4f0">
           ${reciboFila('Subtotal',`$${(v.sub||0).toFixed(2)}`,{muted:true})}
-          ${v.desc?reciboFila(`Descuento (${v.desc}%)`,`-$${((v.sub||0)*v.desc/100).toFixed(2)}`,{color:'#cc3300',muted:true}):''}${v.itbms?reciboFila(`ITBMS (${v.itbms}%)`,`+$${(v.itbmsMonto||0).toFixed(2)}`,{color:'#cc6600'}):''}
+          ${v.desc?reciboFila(`Descuento (${v.desc}%)`,`-$${((v.sub||0)*v.desc/100).toFixed(2)}`,{color:'#cc3300',muted:true}):''}
           ${reciboFila('TOTAL A PAGAR',`$${v.total.toFixed(2)}`,{big:true,border:true,color:'#006633'})}
           ${reciboFila('Estado',`${v.estado.toUpperCase()}`,{color:v.estado==='pagado'?'#006633':v.estado==='fiado'?'#cc3300':'#886600',alt:true})}
         </div>
@@ -1881,7 +1733,7 @@ function renderReciboContent(v,ft){
         </div>
         <div style="padding:.3rem .8rem;border-top:1px dashed #ccd;background:#f8faff">
           ${reciboFila('Subtotal',`$${(v.sub||0).toFixed(2)}`,{muted:true})}
-          ${v.desc?reciboFila(`Desc ${v.desc}%`,`-$${((v.sub||0)*v.desc/100).toFixed(2)}`,{color:'#cc3300'}):''}${v.itbms?reciboFila(`ITBMS ${v.itbms}%`,`+$${(v.itbmsMonto||0).toFixed(2)}`,{color:'#cc6600'}):''}
+          ${v.desc?reciboFila(`Desc ${v.desc}%`,`-$${((v.sub||0)*v.desc/100).toFixed(2)}`,{color:'#cc3300'}):''}
           ${reciboFila('TOTAL',`$${v.total.toFixed(2)}`,{big:true,border:true,color:'#006633'})}
           ${reciboFila('Forma de Pago',v.pago,{muted:true,alt:true})}
           ${reciboFila('Estado',v.estado.toUpperCase(),{color:v.estado==='pagado'?'#006633':v.estado==='fiado'?'#cc3300':'#886600'})}
@@ -2784,8 +2636,7 @@ function imprimirConteo(snap){
   const dif=snap.diferencia||0;
   const win=window.open('','_blank','width=480,height=700');
   win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Conteo de Caja</title>
-  <style>*{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;}body{font-family:'Segoe UI',sans-serif;background:#f0f4ff;padding:1rem;}
+  <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',sans-serif;background:#f0f4ff;padding:1rem;}
   .wrap{max-width:400px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,100,200,.15);}
   .hdr{background:linear-gradient(135deg,#020812,#0d1a35);padding:1.2rem;text-align:center;border-bottom:3px solid #ffee00;}
   .hdr img{max-height:60px;max-width:160px;margin:0 auto .4rem;display:block;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,255,255,.5));}
@@ -2869,7 +2720,6 @@ function imprimirStockReport(){
   <title>Reporte de Stock — SERVICIOSEM</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;}
     body{font-family:'Segoe UI',sans-serif;background:#f0f4ff;color:#1a2a4a;padding:1.5rem;}
     .header{background:linear-gradient(135deg,#020812,#0d1a35);color:#fff;border-radius:14px;padding:1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:1.2rem;box-shadow:0 4px 20px rgba(0,255,255,.2),0 0 0 2px rgba(0,255,255,.3);}
     .header img{max-height:70px;max-width:200px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(0,255,255,.5));}
@@ -2957,15 +2807,8 @@ function cmpRenderItems(){
       <div class="vi-t" style="color:var(--purple)">${fmt(it.sub)}</div>
       <button class="btn bd bxs bic" onclick="cmpDelItem(${i})">✕</button>
     </div>`).join('');
-  cmpCalcTotal();
-}
-function cmpCalcTotal(){
-  const sub=citems.reduce((s,i)=>s+i.sub,0);
-  const itbmsPct=parseFloat($('cmp-itbms')?.value||0);
-  const itbmsMonto=sub*(itbmsPct/100);
-  const tot=sub+itbmsMonto;
-  if($('cmp-itbms-monto'))$('cmp-itbms-monto').textContent=fmt(itbmsMonto);
-  if($('cmp-total'))$('cmp-total').textContent=fmt(tot);
+  const tot=citems.reduce((s,i)=>s+i.sub,0);
+  $('cmp-total').textContent=fmt(tot);
 }
 function cmpDelItem(i){citems.splice(i,1);cmpRenderItems();}
 function guardarCompra(){
@@ -2974,17 +2817,14 @@ function guardarCompra(){
   let provNomF='Sin proveedor';
   if(provNom){provNomF=provNom;}
   else if(provId){provNomF=DB.proveedores.find(p=>p.id===parseInt(provId))?.nombre||'?';}
-  const subtotalCmp=citems.reduce((s,i)=>s+i.sub,0);
-  const itbmsCmpPct=parseFloat($('cmp-itbms')?.value||0);
-  const itbmsCmpMonto=subtotalCmp*(itbmsCmpPct/100);
-  const total=subtotalCmp+itbmsCmpMonto;
+  const total=citems.reduce((s,i)=>s+i.sub,0);
   const est=$('cmp-est').value;const pago=$('cmp-pago').value;
   const cmp={
     id:(DB.nextId.cmp=DB.nextId.cmp?DB.nextId.cmp+1:1),
     codigo:'CMP-'+pad(DB.nextId.cmp||1,5),
     fecha:$('cmp-fec').value,
     provId:provId||null,provNom:provNomF,
-    items:[...citems],subtotal:subtotalCmp,itbms:itbmsCmpPct,itbmsMonto:itbmsCmpMonto,total,
+    items:[...citems],total,
     pagado:est==='pagado'?total:0,
     saldo:est==='pagado'?0:total,
     pago,estado:est,
@@ -3130,22 +2970,22 @@ function toggleComprasCard(){
 function exportTodo(){
   const wb=XLSX.utils.book_new();
   const sheets=[
-    {n:'Ventas',d:DB.ventas.map(v=>({Folio:v.folio,Fecha:new Date(v.fecha).toLocaleString('es-ES'),Cliente:v.cliNom,Items:(v.items||[]).map(i=>i.nom+' x'+i.qty).join(' | '),Subtotal:v.sub,'Desc%':v.desc||0,'ITBMS%':v.itbms||0,ITBMS_Monto:v.itbmsMonto||0,Total:v.total,Abonado:v.abonado||0,Saldo:v.total-(v.abonado||0),Pago:v.pago,Estado:v.estado,Cuotas:v.cuotas||1,Cajero:v.cajNom||'',Turno:v.trnId||''}))},
-    {n:'Starlink',d:DB.slVentas.map(v=>({ID:v.id,Fecha:v.fecha,Cliente:v.cliNom,Bloque:v.bl,Entrada:v.he,Cierre:v.hc,Precio:v.precio,Pago:v.pago,Cajero:v.cajNom||'',Turno:v.trnId||''}))},
-    {n:'Gastos',d:DB.gastos.map(g=>({Código:g.codigo,Fecha:g.fecha,Descripción:g.desc,Categoría:g.cat,Monto:g.monto,Pago:g.pago,Proveedor:g.prov||'',Cajero:g.cajNom||'',Turno:g.trnId||''}))},
-    {n:'Compras',d:(DB.compras||[]).map(c=>({Código:c.codigo,Fecha:c.fecha,Proveedor:c.provNom,Productos:c.items.map(i=>i.nom+' x'+i.qty).join(' | '),Subtotal:c.subtotal||c.total,'ITBMS%':c.itbms||0,ITBMS_Monto:c.itbmsMonto||0,Total:c.total,Pagado:c.pagado||0,Saldo:c.saldo||0,Estado:c.estado,Pago:c.pago,Cajero:c.cajNom||''}))},
-    {n:'Préstamos',d:DB.prestamos.map(p=>({Código:p.codigo,Fecha:p.fecha,Persona:p.per,Tipo:p.tipo,Monto:p.monto,Pagado:p.pagado||0,Saldo:p.saldo||0,Vence:p.venc||'',Estado:p.estado,Notas:p.notas||'',Cajero:p.cajNom||''}))},
-    {n:'Productos',d:DB.productos.map(p=>({Código:p.codigo,Nombre:p.nombre,Categoría:p.cat,Unidad:p.und,Costo:p.costo||0,PVenta:p.pvta,Margen:p.costo>0?(((p.pvta-p.costo)/p.costo)*100).toFixed(1)+'%':'',Stock:p.cat==='internet'?'∞':p.stock,StockMin:p.smin,Proveedor:p.prov||'',Descripción:p.desc||'',Activo:p.activo?'Sí':'No'}))},
-    {n:'Clientes',d:DB.clientes.map(c=>({Código:c.codigo,Nombre:c.nombre,Tel:c.tel||'',Email:c.email||'',Dirección:c.dir||'',TotalGastado:c.totalGastado||0,Compras:c.compras||0,Fiado:c.fiado||0,Notas:c.notas||''}))},
-    {n:'Proveedores',d:DB.proveedores.map(p=>({Código:p.codigo,Nombre:p.nombre,Contacto:p.contacto||'',Tel:p.tel||'',Email:p.email||'',Dirección:p.dir||''}))},
-    {n:'Cajeros',d:DB.cajeros.map(c=>({Código:c.codigo,Nombre:c.nombre,Rol:c.rol,Turno:c.trn,Tel:c.tel||'',Ventas:c.ventas||0,Total:c.total||0,Activo:c.activo?'Sí':'No'}))},
-    {n:'Turnos',d:DB.turnos.map(t=>({ID:t.id,Cajero:t.cajNom,Turno:t.trn,Apertura:new Date(t.apertura).toLocaleString('es-ES'),Cierre:t.cierre?new Date(t.cierre).toLocaleString('es-ES'):'—',Ventas:t.ventas||0,Total:t.total||0,Gastos:t.gastos||0,Estado:t.estado}))},
-    {n:'Inventario_Movimientos',d:(DB.ajustesInv||[]).map(a=>({Fecha:a.fecha,Producto:a.nom||a.prodId,Tipo:a.tipo,Cantidad:a.qty,Antes:a.antes||0,Después:a.despues||0,Motivo:a.motivo||'',Cajero:a.cajNom||''}))},
-    {n:'Conteos_Caja',d:(DB.conteos||[]).map(c=>({Fecha:new Date(c.fecha).toLocaleString('es-ES'),Cajero:c.cajNom,Total_Contado:c.total||0,Sistema:c.sistema||0,Diferencia:c.diferencia||0,...Object.entries(c.denoms||{}).reduce((o,[k,v])=>({...o,['Denom_'+k]:v}),{})}))},
+    {n:'Ventas',d:DB.ventas.map(v=>({Folio:v.folio,Fecha:new Date(v.fecha).toLocaleString('es-ES'),Cliente:v.cliNom,Items:(v.items||[]).map(i=>i.nom+' x'+i.qty).join(' | '),Subtotal:v.sub,'Desc%':v.desc||0,'ITBMS%':v.itbms||0,ITBMS_Monto:v.itbmsMonto||0,Total:v.total,Abonado:v.abonado||0,Saldo:v.total-(v.abonado||0),Pago:v.pago,Estado:v.estado,Cuotas:v.cuotas||1,Cajero:v.cajNom||''}))},
+    {n:'Starlink',d:DB.slVentas.map(v=>({ID:v.id,Fecha:v.fecha,Cliente:v.cliNom,Bloque:v.bl,Entrada:v.he,Cierre:v.hc,Precio:v.precio,Pago:v.pago,Cajero:v.cajNom||''}))},
+    {n:'Gastos',d:DB.gastos.map(g=>({Código:g.codigo,Fecha:g.fecha,Descripción:g.desc,Categoría:g.cat,Monto:g.monto,Pago:g.pago,Proveedor:g.prov||'',Cajero:g.cajNom||''}))},
+    {n:'Compras',d:(DB.compras||[]).map(c=>({Código:c.codigo,Fecha:c.fecha,Proveedor:c.provNom,Productos:c.items.map(i=>i.nom+' x'+i.qty).join(' | '),'ITBMS%':c.itbms||0,Total:c.total,Pagado:c.pagado||0,Saldo:c.saldo||0,Estado:c.estado}))},
+    {n:'Préstamos',d:DB.prestamos.map(p=>({Código:p.codigo,Fecha:p.fecha,Persona:p.per,Tipo:p.tipo,Monto:p.monto,Pagado:p.pagado||0,Saldo:p.saldo||0,Vence:p.venc||'',Estado:p.estado,Notas:p.notas||''}))},
+    {n:'Productos',d:DB.productos.map(p=>({Código:p.codigo,Nombre:p.nombre,Categoría:p.cat,Unidad:p.und,Costo:p.costo||0,PVenta:p.pvta,Stock:p.cat==='internet'?'∞':p.stock,StockMin:p.smin,Descripción:p.desc||'',Activo:p.activo?'Sí':'No'}))},
+    {n:'Clientes',d:DB.clientes.map(c=>({Código:c.codigo,Nombre:c.nombre,Tel:c.tel||'',Email:c.email||'',Dirección:c.dir||'',TotalGastado:c.totalGastado||0,Compras:c.compras||0,Fiado:c.fiado||0}))},
+    {n:'Proveedores',d:DB.proveedores.map(p=>({Código:p.codigo,Nombre:p.nombre,Contacto:p.contacto||'',Tel:p.tel||'',Email:p.email||''}))},
+    {n:'Cajeros',d:DB.cajeros.map(c=>({Código:c.codigo,Nombre:c.nombre,Rol:c.rol,Turno:c.trn,Ventas:c.ventas||0,Total:c.total||0,Activo:c.activo?'Sí':'No'}))},
+    {n:'Turnos',d:DB.turnos.map(t=>({ID:t.id,Cajero:t.cajNom,Turno:t.trn,Apertura:new Date(t.apertura).toLocaleString('es-ES'),Cierre:t.cierre?new Date(t.cierre).toLocaleString('es-ES'):'—',Ventas:t.ventas||0,Total:t.total||0,Estado:t.estado}))},
+    {n:'Inventario',d:(DB.ajustesInv||[]).map(a=>({Fecha:a.fecha,Producto:a.nom||a.prodId,Tipo:a.tipo,Cantidad:a.qty,Antes:a.antes||0,Después:a.despues||0,Motivo:a.motivo||'',Cajero:a.cajNom||''}))},
+    {n:'Conteos_Caja',d:(DB.conteos||[]).map(c=>({Fecha:new Date(c.fecha).toLocaleString('es-ES'),Cajero:c.cajNom,Total_Contado:c.total||0,Sistema:c.sistema||0,Diferencia:c.diferencia||0}))},
   ];
   sheets.forEach(s=>{if(s.d&&s.d.length){const ws=XLSX.utils.json_to_sheet(s.d);XLSX.utils.book_append_sheet(wb,ws,s.n);}});
   XLSX.writeFile(wb,`SERVICIOSEM_Backup_${hoy()}.xlsx`);
-  toast('✅ Backup completo exportado ('+sheets.length+' hojas)','success');
+  toast('✅ Backup completo — '+ sheets.length+' hojas exportadas','success');
 }
 function exportSL(){const d=DB.slVentas.map(v=>({Fecha:v.fecha,Cliente:v.cliNom,Bloque:v.bl,Entrada:v.he,Cierre:v.hc,Precio:v.precio}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.length?d:[{}]),'Starlink');XLSX.writeFile(wb,'SEM_Starlink.xlsx');toast('Exportado','success');}
 function exportVentas(){const d=DB.ventas.map(v=>({Folio:v.folio,Fecha:new Date(v.fecha).toLocaleString('es-ES'),Cliente:v.cliNom,Total:v.total,Pago:v.pago,Estado:v.estado}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d.length?d:[{}]),'Ventas');XLSX.writeFile(wb,'SEM_Ventas.xlsx');toast('Exportado','success');}
@@ -3162,23 +3002,10 @@ function importAll(event){
   reader.onload=e=>{
     try{
       const wb=XLSX.read(e.target.result,{type:'binary'});let imp=0;
-      const sj=n=>wb.SheetNames.includes(n)?XLSX.utils.sheet_to_json(wb.Sheets[n]):[];
-      // Productos
-      sj('Productos').forEach(r=>{if(!r.Nombre)return;if(!DB.productos.find(p=>p.codigo===r['Código'])){DB.productos.push({id:DB.nextId.prod++,codigo:r['Código']||'PRD-'+pad(DB.nextId.prod),nombre:r.Nombre,cat:r['Categoría']||'otro',und:r.Unidad||'unidad',costo:parseFloat(r.Costo)||0,pvta:parseFloat(r.PVenta)||0,stock:parseInt(r.Stock)||0,smin:parseInt(r.StockMin)||0,prov:'',desc:r['Descripción']||'',activo:1});imp++;}});
-      // Clientes
-      sj('Clientes').forEach(r=>{if(!r.Nombre)return;if(!DB.clientes.find(c=>c.codigo===r['Código'])){DB.clientes.push({id:DB.nextId.cli++,codigo:r['Código']||'CLI-'+pad(DB.nextId.cli),nombre:r.Nombre,tel:r.Tel||'',email:r.Email||'',dir:r['Dirección']||'',notas:r.Notas||'',totalGastado:parseFloat(r.TotalGastado)||0,compras:parseInt(r.Compras)||0,fiado:parseFloat(r.Fiado)||0});imp++;}});
-      // Proveedores
-      sj('Proveedores').forEach(r=>{if(!r.Nombre)return;if(!DB.proveedores.find(p=>p.codigo===r['Código'])){DB.proveedores.push({id:DB.nextId.prov++,codigo:r['Código']||'PRV-'+pad(DB.nextId.prov),nombre:r.Nombre,contacto:r.Contacto||'',tel:r.Tel||'',email:r.Email||'',dir:r['Dirección']||'',notas:'',activo:1});imp++;}});
-      // Ventas (solo restaura, no duplica)
-      sj('Ventas').forEach(r=>{if(!r.Folio)return;if(!DB.ventas.find(v=>v.folio===r.Folio)){DB.ventas.push({id:DB.nextId.vta++,folio:r.Folio,fecha:r.Fecha||hoy(),cliNom:r.Cliente||'General',cliId:null,items:[],sub:parseFloat(r.Subtotal)||0,desc:parseFloat(r['Desc%'])||0,itbms:parseFloat(r['ITBMS%'])||0,itbmsMonto:parseFloat(r.ITBMS_Monto)||0,total:parseFloat(r.Total)||0,abonado:parseFloat(r.Abonado)||0,pago:r.Pago||'Efectivo',estado:r.Estado||'pagado',cajNom:r.Cajero||'',cajId:null,trnId:null,items:[]});imp++;}});
-      // Gastos
-      sj('Gastos').forEach(r=>{if(!r['Código'])return;if(!DB.gastos.find(g=>g.codigo===r['Código'])){DB.gastos.push({id:DB.nextId.gas++,codigo:r['Código'],fecha:r.Fecha||hoy(),desc:r['Descripción']||'',cat:r['Categoría']||'otro',monto:parseFloat(r.Monto)||0,pago:r.Pago||'Efectivo',prov:'',cajNom:r.Cajero||'',cajId:null});imp++;}});
-      // Préstamos
-      sj('Préstamos').forEach(r=>{if(!r['Código'])return;if(!DB.prestamos.find(p=>p.codigo===r['Código'])){DB.prestamos.push({id:DB.nextId.pre++,codigo:r['Código'],fecha:r.Fecha||hoy(),per:r.Persona||'',tipo:r.Tipo||'dado',monto:parseFloat(r.Monto)||0,pagado:parseFloat(r.Pagado)||0,saldo:parseFloat(r.Saldo)||0,venc:r.Vence||'',estado:r.Estado||'pendiente',notas:r.Notas||'',cajNom:r.Cajero||''});imp++;}});
-      saveDB();
-      toast('✅ Importados '+imp+' registros correctamente','success');
-      renderDash();renderVentas();renderProds();
-    }catch(ex){console.error(ex);toast('Error al importar: '+ex.message,'error');}
+      if(wb.SheetNames.includes('Productos')){XLSX.utils.sheet_to_json(wb.Sheets['Productos']).forEach(r=>{if(!r.Nombre)return;if(!DB.productos.find(p=>p.codigo===r['Código'])){DB.productos.push({id:DB.nextId.prod++,codigo:r['Código']||'PRD-X',nombre:r.Nombre,cat:r['Categoría']||'otro',und:r.Unidad||'unidad',costo:r.Costo||0,pvta:r.PVenta||r.Precio||0,stock:r.Stock||0,smin:r.StockMin||0,prov:'',desc:'',activo:1});imp++;}})}
+      if(wb.SheetNames.includes('Clientes')){XLSX.utils.sheet_to_json(wb.Sheets['Clientes']).forEach(r=>{if(!r.Nombre)return;if(!DB.clientes.find(c=>c.nombre===r.Nombre)){DB.clientes.push({id:DB.nextId.cli++,codigo:r['Código']||'CLI-X',nombre:r.Nombre,tel:r.Tel||'',email:r.Email||'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0});imp++;}})}
+      saveDB();toast(`${imp} registros importados!`,'success');renderDash();
+    }catch(e){toast('Error al importar','error');}
   };
   reader.readAsBinaryString(file);event.target.value='';
 }
@@ -3186,483 +3013,226 @@ function importProds(event){const file=event.target.files[0];if(!file)return;con
 function importClis(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'binary'});let c=0;XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]).forEach(r=>{if(!r.Nombre)return;DB.clientes.push({id:DB.nextId.cli++,codigo:r['Código']||'CLI-'+pad(DB.nextId.cli),nombre:r.Nombre,tel:r.Tel||'',email:r.Email||'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0});c++;});saveDB();toast(`${c} clientes importados`,'success');renderClis();}catch{toast('Error','error');}};reader.readAsBinaryString(file);event.target.value='';}
 
 
-function setMobNav(el){
-  document.querySelectorAll('.mob-nb').forEach(b=>b.classList.remove('act'));
-  if(el)el.classList.add('act');
-}
-function toggleMobMore(){
-  const m=$('mob-more-menu');if(m)m.classList.toggle('show');
-}
-function closeMobMore(){
-  const m=$('mob-more-menu');if(m)m.classList.remove('show');
-}
-// Close more menu on outside click
-document.addEventListener('click',e=>{
-  const m=$('mob-more-menu');
-  if(m&&m.classList.contains('show')&&!e.target.closest('.mob-nb-more')&&!e.target.closest('.mob-more-menu'))
-    m.classList.remove('show');
-});
-
 // ═══════════════════════════════════════════════════════════
-// ASISTENTE IA — SEM Assistant
+// ASISTENTE IA
 // ═══════════════════════════════════════════════════════════
-let aiOpen=false;
-let aiHistory=[];
-let aiTyping=false;
+let aiOpen=false,aiHistory=[],aiTyping=false;
 
 function toggleAI(){
   aiOpen=!aiOpen;
   const p=$('ai-panel');
   if(aiOpen){
     p.classList.add('open');
-    // Ocultar badge
-    $('ai-btn').classList.remove('has-notif');
-    // Mensaje de bienvenida si es primera vez
     if(aiHistory.length===0){
       const h=new Date().getHours();
-      const saludo=h<12?'Buenos días':h<18?'Buenos tardes':'Buenas noches';
-      addAIMsg('bot',`¡Hola! Soy el asistente IA de SERVICIOSEM 🤖\n\nConozco todos los datos de tu negocio en tiempo real: ventas, caja, Starlink, préstamos, inventario y más.\n\n¿En qué te puedo ayudar hoy?`);
+      const sal=h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches';
+      addAIMsg('bot',`¡${sal}! Soy el asistente IA de SERVICIOSEM 🤖\n\nConozco todos los datos de tu negocio en tiempo real. ¿En qué te ayudo?`);
     }
-    setTimeout(()=>{const inp=$('ai-inp');if(inp)inp.focus();},300);
-  } else {
-    p.classList.remove('open');
-  }
+    setTimeout(()=>{const i=$('ai-inp');if(i)i.focus();},300);
+  }else{p.classList.remove('open');}
 }
+function clearAIChat(){aiHistory=[];const m=$('ai-msgs');if(m)m.innerHTML='';addAIMsg('bot','Chat limpiado 😊 ¿En qué te ayudo?');}
+function aiKeyDown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAIMsg();}}
+function aiAutoResize(el){el.style.height='40px';el.style.height=Math.min(el.scrollHeight,120)+'px';}
 
-function clearAIChat(){
-  aiHistory=[];
-  const msgs=$('ai-msgs');
-  if(msgs)msgs.innerHTML='';
-  addAIMsg('bot','Chat limpiado. ¿En qué te puedo ayudar? 😊');
-}
-
-function aiKeyDown(e){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAIMsg();}
-}
-function aiAutoResize(el){
-  el.style.height='40px';
-  el.style.height=Math.min(el.scrollHeight,120)+'px';
-}
-
-function addAIMsg(role,text,id){
+function addAIMsg(role,txt,id){
   const msgs=$('ai-msgs');if(!msgs)return;
   const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
   const mid=id||'msg-'+Date.now();
-  const div=document.createElement('div');
-  div.className='ai-msg '+(role==='usr'?'usr':'bot');
-  div.id=mid;
-  div.innerHTML=`<div class="ai-bubble ${id?'thinking':''}">${formatAIText(text)}</div>
-    <span class="ai-ts">${ts}</span>`;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-  return mid;
+  const d=document.createElement('div');
+  d.className='ai-msg '+(role==='usr'?'usr':'bot');d.id=mid;
+  d.innerHTML=`<div class="ai-bubble ${id?'thinking':''}">${fmtAI(txt)}</div><span class="ai-ts">${ts}</span>`;
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return mid;
 }
-
-function updateAIMsg(id,text){
+function updateAIMsg(id,txt){
   const el=document.getElementById(id);if(!el)return;
-  const bubble=el.querySelector('.ai-bubble');
-  if(bubble){bubble.classList.remove('thinking');bubble.innerHTML=formatAIText(text);}
-  const msgs=$('ai-msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;
+  const b=el.querySelector('.ai-bubble');
+  if(b){b.classList.remove('thinking');b.innerHTML=fmtAI(txt);}
+  const m=$('ai-msgs');if(m)m.scrollTop=m.scrollHeight;
 }
-
-function formatAIText(text){
-  if(!text)return'';
-  // Convert markdown-like to HTML
-  let h=text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+function fmtAI(t){
+  if(!t)return'';
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/`(.+?)`/g,'<code style="background:rgba(0,255,255,.1);padding:.1rem .3rem;border-radius:4px;font-size:.82em">$1</code>')
-    .replace(/^#{1,3}\s(.+)$/gm,'<div style="font-weight:800;color:var(--accent);margin:.4rem 0 .2rem">$1</div>')
-    .replace(/^[-•]\s(.+)$/gm,'<div style="padding:.1rem 0;padding-left:.5rem;border-left:2px solid var(--border2)">· $1</div>')
-    .replace(/\n{2,}/g,'<br><br>')
-    .replace(/\n/g,'<br>');
-  return h;
+    .replace(/^#{1,3}\s(.+)$/gm,'<div style="font-weight:800;color:var(--accent);margin:.3rem 0 .1rem">$1</div>')
+    .replace(/^[-•]\s(.+)$/gm,'<div style="padding:.1rem 0 .1rem .6rem;border-left:2px solid var(--border2)">· $1</div>')
+    .replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
 }
 
-// ─── Construir contexto COMPLETO de datos para la IA ───
-function buildAIContext(){
+function buildCtx(){
   try{
-  const now=new Date();
-  const hoyStr=now.toDateString();
-  const hoyFecha=hoy();
-  const A=calcArqueoHoy();
-  const trnLabels={manana:'Mañana (8am-3pm)',tarde:'Tarde (3pm-10pm)',completo:'Completo (8am-10pm)'};
-  const rolLabels={admin:'Administrador',cajero:'Cajero/a',supervisor:'Supervisor'};
+    const now=new Date(),hoyStr=now.toDateString(),hoyF=hoy(),A=calcArqueoHoy();
+    const tL={manana:'Mañana(8am-3pm)',tarde:'Tarde(3pm-10pm)',completo:'Completo(8am-10pm)'};
+    const venHoy=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
+    const slHoy=DB.slVentas.filter(v=>v.fecha===hoyF);
+    const venMes=DB.ventas.filter(v=>{const d=new Date(v.fecha);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+    const gasMes=DB.gastos.filter(g=>{const d=new Date(g.fecha);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+    const porCobrar=DB.ventas.filter(v=>['fiado','credito','parcial'].includes(v.estado));
+    const stockBajo=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=p.smin&&p.stock>=0);
+    const agotados=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=0);
+    const presDadosPend=DB.prestamos.filter(p=>p.tipo==='dado'&&p.estado!=='pagado');
+    const presRecPend=DB.prestamos.filter(p=>p.tipo==='recibido'&&p.estado!=='pagado');
+    const cajeroActivo=DB.cajeros.find(c=>c.id===SES.cajId);
+    const turnosHoy=DB.turnos.filter(t=>new Date(t.apertura).toDateString()===hoyStr);
+    const pvMap={};DB.ventas.forEach(v=>(v.items||[]).forEach(i=>{if(!pvMap[i.nom])pvMap[i.nom]={q:0,t:0};pvMap[i.nom].q+=i.qty;pvMap[i.nom].t+=i.sub;}));
+    const topProds=Object.entries(pvMap).sort((a,b)=>b[1].q-a[1].q).slice(0,8);
+    const compPend=(DB.compras||[]).filter(c=>c.estado!=='pagado');
 
-  // ── Fechas ──
-  const semanaAtras=new Date(now);semanaAtras.setDate(semanaAtras.getDate()-7);
-  const mesActual=now.getMonth();const anioActual=now.getFullYear();
-  const mesAnterior=mesActual===0?11:mesActual-1;
-  const anioMesAnt=mesActual===0?anioActual-1:anioActual;
-
-  // ── SESIÓN ACTIVA ──
-  const cajeroActivo=DB.cajeros.find(c=>c.id===SES.cajId);
-  const turnoActivo=SES.trnId?DB.turnos.find(t=>t.id===SES.trnId):null;
-  const transEnTurno=SES.trnId?(DB.ventas.filter(v=>v.trnId===SES.trnId).length+DB.slVentas.filter(v=>v.trnId===SES.trnId).length):0;
-
-  // ── VENTAS ──
-  const venHoy=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
-  const venSemana=DB.ventas.filter(v=>new Date(v.fecha)>=semanaAtras);
-  const venMes=DB.ventas.filter(v=>{const d=new Date(v.fecha);return d.getMonth()===mesActual&&d.getFullYear()===anioActual;});
-  const venMesAnt=DB.ventas.filter(v=>{const d=new Date(v.fecha);return d.getMonth()===mesAnterior&&d.getFullYear()===anioMesAnt;});
-  const totVenHoy=venHoy.reduce((s,v)=>s+v.total,0);
-  const totVenMes=venMes.reduce((s,v)=>s+v.total,0);
-  const totVenMesAnt=venMesAnt.reduce((s,v)=>s+v.total,0);
-
-  // ── STARLINK ──
-  const slHoy=DB.slVentas.filter(v=>v.fecha===hoyFecha);
-  const slMes=DB.slVentas.filter(v=>{const d=new Date(v.fecha+'T00:00:00');return d.getMonth()===mesActual&&d.getFullYear()===anioActual;});
-  const slManHoy=slHoy.filter(v=>v.bl==='manana');
-  const slTarHoy=slHoy.filter(v=>v.bl==='tarde');
-
-  // ── GASTOS ──
-  const gasHoy=DB.gastos.filter(g=>g.fecha===hoyFecha);
-  const gasMes=DB.gastos.filter(g=>{const d=new Date(g.fecha);return d.getMonth()===mesActual&&d.getFullYear()===anioActual;});
-  const totGasHoy=gasHoy.reduce((s,g)=>s+g.monto,0);
-  const totGasMes=gasMes.reduce((s,g)=>s+g.monto,0);
-  const gasPorCat=[...new Set(gasMes.map(g=>g.cat))].map(cat=>{
-    const t=gasMes.filter(g=>g.cat===cat).reduce((s,g)=>s+g.monto,0);
-    return`${cat}: $${t.toFixed(2)}`;
-  });
-
-  // ── COBROS PENDIENTES ──
-  const porCobrar=DB.ventas.filter(v=>['fiado','credito','parcial'].includes(v.estado));
-  const totPorCobrar=porCobrar.reduce((s,v)=>s+(v.total-(v.abonado||0)),0);
-
-  // ── PRÉSTAMOS ──
-  const presDados=DB.prestamos.filter(p=>p.tipo==='dado');
-  const presRec=DB.prestamos.filter(p=>p.tipo==='recibido');
-  const presDadosPend=presDados.filter(p=>p.estado!=='pagado');
-  const presRecPend=presRec.filter(p=>p.estado!=='pagado');
-  const vencidosHoy=presDadosPend.filter(p=>p.venc&&p.venc<hoyFecha);
-
-  // ── INVENTARIO ──
-  const prodsActivos=DB.productos.filter(p=>p.activo);
-  const stockBajo=prodsActivos.filter(p=>p.cat!=='internet'&&p.stock>0&&p.stock<=p.smin);
-  const agotados=prodsActivos.filter(p=>p.cat!=='internet'&&p.stock<=0);
-  const valorInv=prodsActivos.reduce((s,p)=>s+(p.cat!=='internet'?(p.stock||0)*(p.costo||0):0),0);
-
-  // ── TOP PRODUCTOS ──
-  const pvMap={};
-  DB.ventas.forEach(v=>(v.items||[]).forEach(i=>{
-    if(!pvMap[i.nom])pvMap[i.nom]={qty:0,total:0};
-    pvMap[i.nom].qty+=i.qty;pvMap[i.nom].total+=i.sub;
-  }));
-  const topProds=Object.entries(pvMap).sort((a,b)=>b[1].qty-a[1].qty).slice(0,8);
-
-  // ── TOP CLIENTES ──
-  const topClis=[...DB.clientes].sort((a,b)=>(b.totalGastado||0)-(a.totalGastado||0)).slice(0,8);
-
-  // ── ÚLTIMAS VENTAS HOY ──
-  const ultVenHoy=venHoy.slice(0,10);
-
-  // ── TURNOS ──
-  const turnosHoy=DB.turnos.filter(t=>new Date(t.apertura).toDateString()===hoyStr);
-
-  // ── COMPRAS ──
-  const comprasPend=(DB.compras||[]).filter(c=>c.estado!=='pagado');
-  const totCompPend=comprasPend.reduce((s,c)=>s+c.saldo,0);
-
-  // ══════ CONSTRUIR TEXTO DEL CONTEXTO ══════
-  return `════════════════════════════════════════
-SISTEMA SERVICIOSEM — DATOS EN TIEMPO REAL
-${now.toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})} · ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
+    return `DATOS SERVICIOSEM — ${now.toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})} ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
 Negocio: Boca de Remedios, Comarca Ngäbe-Buglé, Panamá
-════════════════════════════════════════
 
-▌SESIÓN ACTIVA AHORA MISMO
-• Cajero/a EN TURNO: ${SES.cajId?`${SES.cajNom} (ID:${SES.cajId}, Rol:${cajeroActivo?rolLabels[cajeroActivo.rol]||cajeroActivo.rol:'—'})`:'⚠️ SIN SESIÓN ACTIVA — nadie ha iniciado turno'}
-• Turno activo: ${SES.trn?trnLabels[SES.trn]||SES.trn:'—'}
-• Turno inició: ${SES.ini?new Date(SES.ini).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'—'}
-• Transacciones en este turno: ${transEnTurno}
-• Turno ID: ${SES.trnId||'—'}
+=== SESIÓN ACTIVA ===
+Cajero EN TURNO AHORA: ${SES.cajId?`${SES.cajNom} | Rol: ${cajeroActivo?cajeroActivo.rol:'—'} | Turno: ${tL[SES.trn]||SES.trn} | Inició: ${SES.ini?new Date(SES.ini).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'—'}`:'SIN SESIÓN ACTIVA'}
 
-▌TODOS LOS CAJEROS REGISTRADOS (${DB.cajeros.length} total)
-${DB.cajeros.map(c=>`• ${c.nombre} | Rol: ${rolLabels[c.rol]||c.rol} | Turno habitual: ${trnLabels[c.trn]||c.trn} | Ventas totales: ${c.ventas||0} | Recaudado: $${(c.total||0).toFixed(2)} | Estado: ${c.activo?'✅ Activo':'❌ Inactivo'}${SES.cajId===c.id?' ← EN TURNO AHORA':''}`).join('\n')||'Sin cajeros'}
+=== CAJEROS REGISTRADOS (${DB.cajeros.length}) ===
+${DB.cajeros.map(c=>`${c.nombre} | ${c.rol} | ${tL[c.trn]||c.trn} | Ventas:${c.ventas||0} | Recaudado:$${(c.total||0).toFixed(2)} | ${c.activo?'Activo':'Inactivo'}${SES.cajId===c.id?' ← EN TURNO AHORA':''}`).join('\n')||'Ninguno'}
 
-▌TURNOS DE HOY
-${turnosHoy.length?turnosHoy.map(t=>`• ${t.cajNom} | ${trnLabels[t.trn]||t.trn} | Apertura: ${new Date(t.apertura).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} | Cierre: ${t.cierre?new Date(t.cierre).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'Turno abierto'} | Estado: ${t.estado}`).join('\n'):'Sin turnos registrados hoy'}
+=== TURNOS DE HOY ===
+${turnosHoy.map(t=>`${t.cajNom} | ${tL[t.trn]||t.trn} | Abrió:${new Date(t.apertura).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} | ${t.estado}`).join('\n')||'Sin turnos hoy'}
 
-▌CAJA HOY — ${hoyFecha}
-• Ventas regulares hoy: ${venHoy.length} | Total: $${totVenHoy.toFixed(2)}
-• Starlink hoy: ${slHoy.length} conexiones | Total: $${slHoy.reduce((s,v)=>s+v.precio,0).toFixed(2)}
-  - Bloque Mañana: ${slManHoy.length} sesiones ($${slManHoy.reduce((s,v)=>s+v.precio,0).toFixed(2)})
-  - Bloque Tarde: ${slTarHoy.length} sesiones ($${slTarHoy.reduce((s,v)=>s+v.precio,0).toFixed(2)})
-• Ingresos totales hoy: $${A.ingresoTotal.toFixed(2)}
-• Gastos hoy: $${A.egresoTotal.toFixed(2)} (${gasHoy.length} registros)
-• NETO del día: $${A.neto.toFixed(2)} ${A.neto>=0?'✅':'⚠️ NEGATIVO'}
-• Efectivo en caja: $${A.efectivo.toFixed(2)}
-• Transferencias/Digital: $${A.transfer.toFixed(2)}
+=== CAJA HOY (${hoyF}) ===
+Ventas regulares: ${venHoy.length} = $${venHoy.reduce((s,v)=>s+v.total,0).toFixed(2)}
+Starlink hoy: ${slHoy.length} sesiones = $${slHoy.reduce((s,v)=>s+v.precio,0).toFixed(2)}
+  Mañana: ${slHoy.filter(v=>v.bl==='manana').length} | Tarde: ${slHoy.filter(v=>v.bl==='tarde').length}
+Gastos hoy: $${A.egresoTotal.toFixed(2)}
+Ingresos totales: $${A.ingresoTotal.toFixed(2)}
+NETO hoy: $${A.neto.toFixed(2)} ${A.neto>=0?'✅':'⚠️NEGATIVO'}
+Efectivo en caja: $${A.efectivo.toFixed(2)}
+Transferencias: $${A.transfer.toFixed(2)}
 
-▌ÚLTIMAS ${ultVenHoy.length} VENTAS DE HOY
-${ultVenHoy.map(v=>`• ${v.folio} | ${v.cliNom} | $${v.total.toFixed(2)} | ${v.pago} | ${v.estado} | Cajero: ${v.cajNom||'—'} | Items: ${(v.items||[]).map(i=>i.nom+'×'+i.qty).join(', ')}`).join('\n')||'Sin ventas hoy todavía'}
+=== ÚLTIMAS 10 VENTAS DE HOY ===
+${venHoy.slice(0,10).map(v=>`${v.folio} | ${v.cliNom} | $${v.total.toFixed(2)} | ${v.pago} | ${v.estado} | Cajero:${v.cajNom||'—'} | ${(v.items||[]).map(i=>i.nom+'x'+i.qty).join(',')}`).join('\n')||'Sin ventas hoy'}
 
-▌VENTAS DEL MES (${now.toLocaleDateString('es-ES',{month:'long',year:'numeric'})})
-• Ventas: ${venMes.length} | Total: $${totVenMes.toFixed(2)}
-• Promedio por venta: $${venMes.length>0?(totVenMes/venMes.length).toFixed(2):'0.00'}
-• Mes anterior: ${venMesAnt.length} ventas | $${totVenMesAnt.toFixed(2)} ${totVenMesAnt>0?`| Diferencia: ${totVenMes>=totVenMesAnt?'+':''}$${(totVenMes-totVenMesAnt).toFixed(2)}`:''}
-• Por estado: Pagadas:${venMes.filter(v=>v.estado==='pagado').length} | Fiadas:${venMes.filter(v=>v.estado==='fiado').length} | Crédito:${venMes.filter(v=>v.estado==='credito').length} | Parcial:${venMes.filter(v=>v.estado==='parcial').length}
+=== MES ACTUAL ===
+Ventas: ${venMes.length} = $${venMes.reduce((s,v)=>s+v.total,0).toFixed(2)} | Promedio: $${venMes.length?(venMes.reduce((s,v)=>s+v.total,0)/venMes.length).toFixed(2):'0.00'}
+Gastos: $${gasMes.reduce((s,g)=>s+g.monto,0).toFixed(2)} (${gasMes.length} registros)
+Por categoría: ${[...new Set(gasMes.map(g=>g.cat))].map(c=>c+':$'+gasMes.filter(g=>g.cat===c).reduce((s,g)=>s+g.monto,0).toFixed(2)).join(' | ')||'—'}
 
-▌GASTOS DEL MES
-• Total: $${totGasMes.toFixed(2)} (${gasMes.length} registros)
-• Por categoría: ${gasPorCat.join(' | ')||'Sin gastos'}
-• Hoy: $${totGasHoy.toFixed(2)} (${gasHoy.map(g=>g.desc+': $'+g.monto.toFixed(2)).join(', ')||'ninguno'})
+=== CUENTAS POR COBRAR ===
+Ventas pendientes: ${porCobrar.length} = $${porCobrar.reduce((s,v)=>s+(v.total-(v.abonado||0)),0).toFixed(2)}
+${porCobrar.map(v=>`${v.cliNom}: $${(v.total-(v.abonado||0)).toFixed(2)} (${v.estado}${v.cuotas>1?', '+v.cuotas+' cuotas':''})`).join('\n')||'Ninguna'}
 
-▌CUENTAS POR COBRAR — VENTAS FIADAS/CRÉDITO
-• Pendientes: ${porCobrar.length} ventas | Total: $${totPorCobrar.toFixed(2)}
-${porCobrar.map(v=>`• ${v.folio} | Cliente: ${v.cliNom} | Total: $${v.total.toFixed(2)} | Abonado: $${(v.abonado||0).toFixed(2)} | Saldo: $${(v.total-(v.abonado||0)).toFixed(2)} | Tipo: ${v.estado} | Cuotas: ${v.cuotas||1} | Cajero: ${v.cajNom||'—'}`).join('\n')||'• ✅ Sin cuentas pendientes'}
+=== PRÉSTAMOS ===
+DADOS (me deben): ${presDadosPend.length} activos = $${presDadosPend.reduce((s,p)=>s+p.saldo,0).toFixed(2)}
+${DB.prestamos.filter(p=>p.tipo==='dado').map(p=>`${p.per}: $${p.monto.toFixed(2)} | Saldo:$${(p.saldo||0).toFixed(2)} | ${p.estado}${p.venc?' | Vence:'+p.venc:''}`).join('\n')||'Ninguno'}
+RECIBIDOS (debo yo): ${presRecPend.length} activos = $${presRecPend.reduce((s,p)=>s+p.saldo,0).toFixed(2)}
+${DB.prestamos.filter(p=>p.tipo==='recibido').map(p=>`${p.per}: $${p.monto.toFixed(2)} | Saldo:$${(p.saldo||0).toFixed(2)} | ${p.estado}`).join('\n')||'Ninguno'}
 
-▌PRÉSTAMOS
-DADOS (dinero que me deben a mí):
-${presDados.length?presDados.map(p=>`• ${p.codigo} | ${p.per} | Monto: $${p.monto.toFixed(2)} | Pagado: $${(p.pagado||0).toFixed(2)} | Saldo: $${(p.saldo||0).toFixed(2)} | Estado: ${p.estado} | Vence: ${p.venc||'sin fecha'}${p.venc&&p.venc<hoyFecha?' ⚠️VENCIDO':''}`).join('\n'):'• Sin préstamos dados'}
-RECIBIDOS (dinero que debo yo):
-${presRec.length?presRec.map(p=>`• ${p.codigo} | ${p.per} | Monto: $${p.monto.toFixed(2)} | Pagado: $${(p.pagado||0).toFixed(2)} | Saldo: $${(p.saldo||0).toFixed(2)} | Estado: ${p.estado}`).join('\n'):'• Sin préstamos recibidos'}
-${vencidosHoy.length?`⚠️ PRÉSTAMOS VENCIDOS: ${vencidosHoy.map(p=>p.per+' $'+p.saldo.toFixed(2)).join(', ')}`:''}
+=== INVENTARIO ===
+Total activos: ${DB.productos.filter(p=>p.activo).length} | Valor: $${DB.productos.reduce((s,p)=>s+(p.cat!=='internet'?(p.stock||0)*(p.costo||0):0),0).toFixed(2)}
+Stock bajo(${stockBajo.length}): ${stockBajo.map(p=>p.nombre+'('+p.stock+'/'+p.smin+')').join(', ')||'Ninguno'}
+Agotados(${agotados.length}): ${agotados.map(p=>p.nombre).join(', ')||'Ninguno'}
+CATÁLOGO: ${DB.productos.filter(p=>p.activo).map(p=>`[${p.codigo}]${p.nombre} Stock:${p.cat==='internet'?'∞':p.stock} PVenta:$${p.pvta} Costo:$${p.costo||0}`).join(' | ')||'Sin productos'}
 
-▌CLIENTES (${DB.clientes.length} total)
-${DB.clientes.map(c=>`• ${c.nombre} | Tel: ${c.tel||'—'} | Compras: ${c.compras||0} | Total gastado: $${(c.totalGastado||0).toFixed(2)} | Fiado pendiente: $${(c.fiado||0).toFixed(2)}`).join('\n')||'Sin clientes registrados'}
+=== TOP PRODUCTOS MÁS VENDIDOS ===
+${topProds.map((p,i)=>`${i+1}. ${p[0]}: ${p[1].q} uds / $${p[1].t.toFixed(2)}`).join('\n')||'Sin historial'}
 
-▌CLIENTES CON FIADO PENDIENTE
-${DB.clientes.filter(c=>c.fiado>0).map(c=>`• ${c.nombre}: $${c.fiado.toFixed(2)} pendiente`).join('\n')||'• ✅ Sin clientes con fiado'}
+=== CLIENTES (${DB.clientes.length}) ===
+${DB.clientes.map(c=>`${c.nombre} | Tel:${c.tel||'—'} | Compras:${c.compras||0} | Gastado:$${(c.totalGastado||0).toFixed(2)} | Fiado:$${(c.fiado||0).toFixed(2)}`).join('\n')||'Sin clientes'}
 
-▌STARLINK — HISTORIAL RECIENTE (últimas 20 sesiones)
-${DB.slVentas.slice(0,20).map(v=>`• ${v.fecha} | ${v.cliNom} | ${v.bl==='manana'?'Mañana':'Tarde'} | Entrada: ${v.he||'—'} | Cierre: ${v.hc||'—'} | $${v.precio.toFixed(2)} | ${v.pago} | Cajero: ${v.cajNom||'—'}`).join('\n')||'Sin conexiones registradas'}
-• Mes actual: ${slMes.length} sesiones | $${slMes.reduce((s,v)=>s+v.precio,0).toFixed(2)}
-• Total histórico: ${DB.slVentas.length} sesiones | $${DB.slVentas.reduce((s,v)=>s+v.precio,0).toFixed(2)}
+=== PROVEEDORES (${DB.proveedores.length}) ===
+${DB.proveedores.map(p=>`${p.nombre} | Tel:${p.tel||'—'} | Contacto:${p.contacto||'—'}`).join('\n')||'Sin proveedores'}
 
-▌INVENTARIO Y PRODUCTOS
-• Total productos activos: ${prodsActivos.length}
-• Valor en inventario: $${valorInv.toFixed(2)}
-• Stock bajo (${stockBajo.length}): ${stockBajo.map(p=>`${p.nombre}(${p.stock} uds, mín:${p.smin})`).join(', ')||'ninguno'}
-• Agotados (${agotados.length}): ${agotados.map(p=>p.nombre).join(', ')||'ninguno'}
-CATÁLOGO COMPLETO:
-${prodsActivos.map(p=>`• [${p.codigo}] ${p.nombre} | Cat: ${p.cat} | Stock: ${p.cat==='internet'?'∞':p.stock} | Min: ${p.smin} | Costo: $${(p.costo||0).toFixed(2)} | P.Venta: $${p.pvta.toFixed(2)} | Prov: ${p.prov?DB.proveedores.find(pr=>pr.id===parseInt(p.prov))?.nombre||p.prov:'—'}`).join('\n')||'Sin productos'}
+=== COMPRAS PENDIENTES DE PAGO ===
+${compPend.map(c=>`${c.codigo} ${c.provNom}: Total:$${c.total.toFixed(2)} Saldo:$${c.saldo.toFixed(2)} | ${c.estado}`).join('\n')||'Sin compras pendientes'}
 
-▌TOP PRODUCTOS MÁS VENDIDOS (histórico)
-${topProds.map((p,i)=>`${i+1}. ${p[0]} | ${p[1].qty} unidades vendidas | $${p[1].total.toFixed(2)} recaudado`).join('\n')||'Sin ventas históricas'}
+=== STARLINK HISTORIAL RECIENTE ===
+Mes: ${DB.slVentas.filter(v=>{const d=new Date(v.fecha+'T00:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length} sesiones
+Total histórico: ${DB.slVentas.length} sesiones
+${DB.slVentas.slice(0,15).map(v=>`${v.fecha} | ${v.cliNom} | ${v.bl} | ${v.he}→${v.hc||'—'} | $${v.precio} | ${v.cajNom||'—'}`).join('\n')||'Sin conexiones'}
 
-▌PROVEEDORES (${DB.proveedores.length} total)
-${DB.proveedores.map(p=>`• ${p.nombre} | Tel: ${p.tel||'—'} | Contacto: ${p.contacto||'—'} | Email: ${p.email||'—'}`).join('\n')||'Sin proveedores'}
-
-▌COMPRAS A PROVEEDORES PENDIENTES DE PAGO
-${comprasPend.length?comprasPend.map(c=>`• ${c.codigo} | ${c.provNom} | Total: $${c.total.toFixed(2)} | Pagado: $${(c.pagado||0).toFixed(2)} | Saldo: $${c.saldo.toFixed(2)} | Estado: ${c.estado} | Productos: ${c.items.map(i=>i.nom+'×'+i.qty).join(', ')}`).join('\n'):'• ✅ Sin compras pendientes de pago'}
-Total por pagar a proveedores: $${totCompPend.toFixed(2)}
-
-▌HISTORIAL DE VENTAS RECIENTES (últimas 15)
-${DB.ventas.slice(0,15).map(v=>`• ${v.folio} | ${new Date(v.fecha).toLocaleDateString('es-ES')} ${new Date(v.fecha).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} | ${v.cliNom} | $${v.total.toFixed(2)} | ${v.pago} | ${v.estado} | Cajero: ${v.cajNom||'—'} | Items: ${(v.items||[]).map(i=>i.nom+' x'+i.qty+' $'+i.pu).join(', ')}`).join('\n')||'Sin ventas'}
-
-▌GASTOS RECIENTES (últimos 15)
-${DB.gastos.slice(0,15).map(g=>`• ${g.codigo} | ${g.fecha} | ${g.desc} | Cat: ${g.cat} | $${g.monto.toFixed(2)} | ${g.pago} | Cajero: ${g.cajNom||'—'}`).join('\n')||'Sin gastos'}
-════════════════════════════════════════`;
-  }catch(e){return 'Error al leer datos: '+e.message;}
+=== ÚLTIMOS GASTOS REGISTRADOS ===
+${DB.gastos.slice(0,15).map(g=>`${g.fecha} | ${g.desc} | $${g.monto.toFixed(2)} | ${g.cat} | ${g.cajNom||'—'}`).join('\n')||'Sin gastos'}`;
+  }catch(e){return 'Error leyendo datos: '+e.message;}
 }
 
-// ─── Enviar mensaje ───
 async function sendAIMsg(){
   const inp=$('ai-inp');
-  const text=(inp?.value||'').trim();
-  if(!text||aiTyping)return;
+  const txt=(inp?.value||'').trim();
+  if(!txt||aiTyping)return;
   inp.value='';inp.style.height='40px';
-
-  addAIMsg('usr',text);
-  aiHistory.push({role:'user',content:text});
-
+  addAIMsg('usr',txt);
+  aiHistory.push({role:'user',content:txt});
   aiTyping=true;
-  const sendBtn=$('ai-send');if(sendBtn)sendBtn.disabled=true;
-
-  const thinkId=addAIMsg('bot','Analizando tus datos...  ✦ ✦ ✦',`think-${Date.now()}`);
-
+  const sb=$('ai-send');if(sb)sb.disabled=true;
+  const tid=addAIMsg('bot','Analizando datos... ✦','think-'+Date.now());
   try{
-    // Contexto fresco en CADA pregunta — así siempre tiene los datos más actuales
-    const context=buildAIContext();
-    const systemPrompt=`Eres SEM Assistant, el asistente inteligente personal de SERVICIOSEM — negocio en Boca de Remedios, Comarca Ngäbe-Buglé, Panamá. El dueño es Eliezer Mendoza.
+    const ctx=buildCtx();
+    const sys=`Eres SEM Assistant, asistente inteligente de SERVICIOSEM (Boca de Remedios, Comarca Ngäbe-Buglé, Panamá). Dueño: Eliezer Mendoza.
 
-TIENES ACCESO COMPLETO A TODOS LOS DATOS DEL NEGOCIO EN TIEMPO REAL:
-${context}
+DATOS COMPLETOS DEL NEGOCIO AHORA MISMO:
+${ctx}
 
-REGLAS ESTRICTAS:
-1. Responde SIEMPRE en español natural y amigable
-2. Usa los datos reales de arriba — NUNCA inventes cifras ni nombres
-3. Si preguntan por el cajero en turno, mira la sección "SESIÓN ACTIVA AHORA MISMO"
-4. Si preguntan quién vendió algo, busca en "ÚLTIMAS VENTAS" el campo Cajero
-5. Para preguntas sobre personas que deben, revisa "CUENTAS POR COBRAR" y "PRÉSTAMOS"
-6. Para stock, revisa "CATÁLOGO COMPLETO" con todos los productos
-7. Usa **negritas** para cifras y nombres importantes
-8. Da respuestas directas — si hay datos, úsalos; si no hay, dilo claramente
-9. Puedes hacer análisis, comparaciones y recomendaciones basadas en los datos
-10. La moneda es Balboa panameño (equivale a USD $)
-11. Si el dato solicitado no está en los datos provistos, di exactamente eso: "No tengo ese dato registrado en el sistema"
-12. Para análisis de tendencias, compara mes actual vs mes anterior cuando esté disponible`;
-
-    // Construir messages: historial + pregunta actual con contexto refrescado
-    const messages=[];
-    // Agregar historial previo (sin contexto viejo para ahorrar tokens)
-    aiHistory.slice(-8).forEach(m=>messages.push(m));
-    // La última entrada es la pregunta actual — ya está en aiHistory
-    // Si el último mensaje es del usuario, está bien
-    // Si no, agregar
-    if(messages.length===0||messages[messages.length-1].role!=='user'){
-      messages.push({role:'user',content:text});
-    }
-
+REGLAS:
+1. Responde siempre en español
+2. Usa ÚNICAMENTE los datos de arriba — nunca inventes
+3. Para cajero en turno: mira "SESIÓN ACTIVA" y "CAJEROS REGISTRADOS"  
+4. Para deudas: mira "CUENTAS POR COBRAR" y "PRÉSTAMOS"
+5. Para stock: mira "CATÁLOGO" e "INVENTARIO"
+6. Usa **negritas** para cifras y nombres clave
+7. Si el dato no está en los datos: di "No tengo ese dato registrado"
+8. Moneda: Balboa panameño = USD $
+9. Puedes dar recomendaciones y análisis basados en los datos reales`;
+    const msgs=[...aiHistory.slice(-8)];
+    if(!msgs.length||msgs[msgs.length-1].role!=='user')msgs.push({role:'user',content:txt});
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:2000,
-        system:systemPrompt,
-        messages:messages
-      })
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:sys,messages:msgs})
     });
-
     const data=await res.json();
     const reply=(data.content||[]).map(c=>c.type==='text'?c.text:'').join('').trim();
-
-    if(reply){
-      updateAIMsg(thinkId,reply);
-      aiHistory.push({role:'assistant',content:reply});
-      // Mantener historial manejable
-      if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
-    }else if(data.error){
-      updateAIMsg(thinkId,`⚠️ Error: ${data.error.message||'No se pudo conectar'}. Verifica tu conexión a internet.`);
-    }else{
-      updateAIMsg(thinkId,'No pude procesar la respuesta. Intenta de nuevo.');
-    }
-  }catch(err){
-    console.error('AI error:',err);
-    // FALLBACK: respuesta local sin API
-    const localReply=localAIResponse(text);
-    updateAIMsg(thinkId,localReply);
-    aiHistory.push({role:'assistant',content:localReply});
-  }
-
-  aiTyping=false;
-  if(sendBtn)sendBtn.disabled=false;
+    if(reply){updateAIMsg(tid,reply);aiHistory.push({role:'assistant',content:reply});if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);}
+    else{updateAIMsg(tid,localAI(txt));}
+  }catch(e){updateAIMsg(tid,localAI(txt));}
+  aiTyping=false;if(sb)sb.disabled=false;
 }
+function askAI(q){const i=$('ai-inp');if(i)i.value=q;sendAIMsg();}
 
-function askAI(q){
-  const inp=$('ai-inp');
-  if(inp){inp.value=q;}
-  sendAIMsg();
-}
-
-// ─── Respuesta LOCAL precisa (fallback sin internet) ───
-function localAIResponse(q){
+function localAI(q){
   const ql=q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const now=new Date();
-  const hoyStr=now.toDateString();
-  const hoyF=hoy();
-  const A=calcArqueoHoy();
-  const trnL2={manana:'Mañana (8am-3pm)',tarde:'Tarde (3pm-10pm)',completo:'Completo (8am-10pm)'};
-
-  // ── CAJERO EN TURNO ──
-  if(ql.includes('cajero')||ql.includes('quien atiende')||ql.includes('turno')||ql.includes('sesion')||ql.includes('trabaja')||ql.includes('encargad')){
-    if(!SES.cajId){
-      return`⚠️ **Sin sesión activa**\n\nActualmente **no hay ningún cajero con turno iniciado**.\n\nPara iniciar turno: toca el botón 🔴 Salir → vuelves a la pantalla de bienvenida → seleccionas cajero.`;
-    }
+  const now=new Date(),hoyStr=now.toDateString(),hoyF=hoy(),A=calcArqueoHoy();
+  const tL2={manana:'Mañana (8am-3pm)',tarde:'Tarde (3pm-10pm)',completo:'Completo (8am-10pm)'};
+  // Cajero en turno
+  if(ql.match(/cajero|turno|quien atiende|quien esta|encargad|trabaja|sesion/)){
+    if(!SES.cajId)return`⚠️ **Sin sesión activa.** Nadie ha iniciado turno.\nTodos los cajeros:\n${DB.cajeros.map(c=>`· ${c.nombre} (${c.rol})`).join('\n')}`;
     const caj=DB.cajeros.find(c=>c.id===SES.cajId);
-    const turnoActivo=DB.turnos.find(t=>t.id===SES.trnId);
-    const transHoy=DB.ventas.filter(v=>v.cajId===SES.cajId&&new Date(v.fecha).toDateString()===hoyStr).length
-      +DB.slVentas.filter(v=>v.cajId===SES.cajId&&v.fecha===hoyF).length;
-    return`👤 **Cajero en turno ahora mismo:**\n\n**Nombre:** ${SES.cajNom}\n**Turno:** ${trnL2[SES.trn]||SES.trn}\n**Rol:** ${caj?({admin:'Administrador',cajero:'Cajero/a',supervisor:'Supervisor'}[caj.rol]||caj.rol):'—'}\n**Turno inició:** ${SES.ini?new Date(SES.ini).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'—'}\n**Transacciones en este turno:** ${transHoy}`;
+    return`👤 **Cajero en turno:**\n\n**${SES.cajNom}**\nTurno: ${tL2[SES.trn]||SES.trn}\nRol: ${caj?.rol||'—'}\nInició: ${SES.ini?new Date(SES.ini).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'—'}`;
   }
-
-  // ── TODOS LOS CAJEROS ──
-  if(ql.includes('todos los cajeros')||ql.includes('lista cajeros')||ql.includes('cajeros registrados')){
-    return`👥 **Cajeros registrados (${DB.cajeros.length}):**\n\n${DB.cajeros.map(c=>`• **${c.nombre}** | ${c.activo?'✅ Activo':'❌ Inactivo'} | ${trnL2[c.trn]||c.trn} | ${c.ventas||0} ventas | $${(c.total||0).toFixed(2)}${SES.cajId===c.id?' ← **EN TURNO AHORA**':''}`).join('\n')||'Sin cajeros'}`;
+  // Ventas hoy
+  if(ql.match(/vend|ingres/)&&ql.match(/hoy|dia|today/)){
+    const vH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
+    const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
+    return`📊 **Ventas de hoy:**\n\nVentas: **${vH.length}** = **$${vH.reduce((s,v)=>s+v.total,0).toFixed(2)}**\nStarlink: **${sH.length}** = **$${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\nNETO: **$${A.neto.toFixed(2)}**`;
   }
-
-  // ── VENTAS HOY ──
-  if((ql.includes('vend')||ql.includes('ingres'))&&(ql.includes('hoy')||ql.includes('dia')||ql.includes('today'))){
-    const venHoy=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
-    const slHoy=DB.slVentas.filter(v=>v.fecha===hoyF);
-    const totVH=venHoy.reduce((s,v)=>s+v.total,0);
-    const totSL=slHoy.reduce((s,v)=>s+v.precio,0);
-    const ultimas=venHoy.slice(0,5).map(v=>`  · ${v.folio} ${v.cliNom} $${v.total.toFixed(2)} (${v.cajNom||'—'})`).join('\n');
-    return`📊 **Ventas de hoy — ${now.toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long'})}:**\n\n💰 Ventas regulares: **${venHoy.length}** = **$${totVH.toFixed(2)}**\n🛰️ Starlink: **${slHoy.length}** sesiones = **$${totSL.toFixed(2)}**\n📤 Gastos: **$${A.egresoTotal.toFixed(2)}**\n✅ **NETO hoy: $${A.neto.toFixed(2)}**${venHoy.length>0?'\n\n**Últimas ventas:**\n'+ultimas:''}`;
-  }
-
-  // ── CAJA / EFECTIVO ──
-  if(ql.includes('caja')||ql.includes('efectivo')||ql.includes('dinero')||ql.includes('cuanto hay')){
-    return`💵 **Estado de Caja — ${hoyF}:**\n\n• Efectivo: **$${A.efectivo.toFixed(2)}**\n• Transferencias/Digital: **$${A.transfer.toFixed(2)}**\n• Ingresos totales: **$${A.ingresoTotal.toFixed(2)}**\n• Egresos: **$${A.egresoTotal.toFixed(2)}**\n• **NETO: $${A.neto.toFixed(2)}** ${A.neto>=0?'✅':'⚠️ Negativo'}`;
-  }
-
-  // ── STOCK / INVENTARIO ──
-  if(ql.includes('stock')||ql.includes('inventario')||ql.includes('producto')||ql.includes('queda')){
-    const bajo=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock>0&&p.stock<=p.smin);
-    const agot=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=0);
-    const todos=DB.productos.filter(p=>p.activo&&p.cat!=='internet');
-    return`📦 **Inventario:**\n\n• Total productos: **${todos.length}**\n• Valor total: **$${todos.reduce((s,p)=>s+p.stock*(p.costo||0),0).toFixed(2)}**\n\n${agot.length?`🔴 **Agotados (${agot.length}):** ${agot.map(p=>p.nombre).join(', ')}\n`:''}${bajo.length?`⚠️ **Stock bajo (${bajo.length}):**\n${bajo.map(p=>`  · ${p.nombre}: ${p.stock} (mín:${p.smin})`).join('\n')}`:'✅ Todo el inventario está bien abastecido'}`;
-  }
-
-  // ── QUIEN DEBE / DEUDAS / COBRAR ──
-  if(ql.includes('deb')||ql.includes('cobrar')||ql.includes('fiado')||ql.includes('pendiente')||ql.includes('credito')){
+  // Caja
+  if(ql.match(/caja|efectivo|cuanto hay|dinero/))
+    return`💵 **Caja:**\nEfectivo: **$${A.efectivo.toFixed(2)}**\nTransferencias: **$${A.transfer.toFixed(2)}**\nIngresos: **$${A.ingresoTotal.toFixed(2)}**\nEgresos: **$${A.egresoTotal.toFixed(2)}**\n**NETO: $${A.neto.toFixed(2)}**`;
+  // Deudas
+  if(ql.match(/deb|cobrar|fiado|deben|pendiente/)){
     const pc=DB.ventas.filter(v=>['fiado','credito','parcial'].includes(v.estado));
-    const totPC=pc.reduce((s,v)=>s+(v.total-(v.abonado||0)),0);
-    const pres=DB.prestamos.filter(p=>p.tipo==='dado'&&p.estado!=='pagado');
-    const totPres=pres.reduce((s,p)=>s+p.saldo,0);
-    const clisFiado=DB.clientes.filter(c=>c.fiado>0);
-    let resp=`💸 **Cuentas por Cobrar:**\n\n`;
-    if(pc.length>0){
-      resp+=`**Ventas fiadas/crédito (${pc.length}) — $${totPC.toFixed(2)} total:**\n`;
-      resp+=pc.map(v=>`  · ${v.cliNom}: $${(v.total-(v.abonado||0)).toFixed(2)} (${v.estado}${v.cuotas>1?', '+v.cuotas+' cuotas':''})`).join('\n')+'\n\n';
-    }else resp+=`✅ Sin ventas pendientes de cobro\n\n`;
-    if(pres.length>0){
-      resp+=`**Préstamos dados pendientes (${pres.length}) — $${totPres.toFixed(2)} total:**\n`;
-      resp+=pres.map(p=>`  · ${p.per}: $${p.saldo.toFixed(2)}${p.venc?' (vence:'+p.venc+')':''}`).join('\n');
-    }else resp+=`✅ Sin préstamos pendientes por cobrar`;
-    return resp;
+    const pr=DB.prestamos.filter(p=>p.tipo==='dado'&&p.estado!=='pagado');
+    return`💸 **Por cobrar:**\n\nVentas: ${pc.length} = **$${pc.reduce((s,v)=>s+(v.total-(v.abonado||0)),0).toFixed(2)}**\n${pc.map(v=>`· ${v.cliNom}: $${(v.total-(v.abonado||0)).toFixed(2)}`).join('\n')}\n\nPréstamos dados: ${pr.length} = **$${pr.reduce((s,p)=>s+p.saldo,0).toFixed(2)}**\n${pr.map(p=>`· ${p.per}: $${p.saldo.toFixed(2)}`).join('\n')}`;
   }
-
-  // ── STARLINK ──
-  if(ql.includes('starlink')||ql.includes('internet')||ql.includes('conexion')||ql.includes('sesion')){
-    const slH=DB.slVentas.filter(v=>v.fecha===hoyF);
-    const slMes=DB.slVentas.filter(v=>{const d=new Date(v.fecha+'T00:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
-    return`🛰️ **Starlink:**\n\n**Hoy:**\n• Mañana: ${slH.filter(v=>v.bl==='manana').length} sesiones\n• Tarde: ${slH.filter(v=>v.bl==='tarde').length} sesiones\n• Total hoy: **${slH.length}** = **$${slH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\n\n**Este mes:** ${slMes.length} sesiones = **$${slMes.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\n**Histórico total:** ${DB.slVentas.length} sesiones = **$${DB.slVentas.reduce((s,v)=>s+v.precio,0).toFixed(2)}**${slH.length>0?'\n\n**Sesiones de hoy:**\n'+slH.map(v=>`  · ${v.cliNom} ${v.bl==='manana'?'Mañana':'Tarde'} ${v.he||'—'}→${v.hc||'—'} $${v.precio} (${v.cajNom||'—'})`).join('\n'):''}`;
+  // Stock
+  if(ql.match(/stock|inventario|producto|queda/)){
+    const b=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=p.smin);
+    const a=DB.productos.filter(p=>p.cat!=='internet'&&p.activo&&p.stock<=0);
+    return`📦 **Inventario:**\n${a.length?`🔴 Agotados(${a.length}): ${a.map(p=>p.nombre).join(', ')}\n`:''}${b.length?`⚠️ Stock bajo(${b.length}):\n${b.map(p=>`· ${p.nombre}: ${p.stock}(mín:${p.smin})`).join('\n')}`:'✅ Inventario bien abastecido'}`;
   }
-
-  // ── RESUMEN DEL DÍA ──
-  if(ql.includes('resumen')||ql.includes('como va')||ql.includes('reporte')||ql.includes('balance')){
-    const venH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
-    const slH=DB.slVentas.filter(v=>v.fecha===hoyF);
-    const gasH=DB.gastos.filter(g=>g.fecha===hoyF);
-    return`📊 **Resumen — ${now.toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long'})}**\n\n👤 Cajero: **${SES.cajNom||'Sin sesión'}** ${SES.trn?'('+trnL2[SES.trn]+')':''}\n\n💰 **Ingresos:**\n• ${venH.length} ventas regulares: $${venH.reduce((s,v)=>s+v.total,0).toFixed(2)}\n• ${slH.length} Starlink: $${slH.reduce((s,v)=>s+v.precio,0).toFixed(2)}\n• **Total ingresos: $${A.ingresoTotal.toFixed(2)}**\n\n📤 **Egresos:** $${A.egresoTotal.toFixed(2)} (${gasH.length} gastos)\n\n✅ **NETO: $${A.neto.toFixed(2)}** ${A.neto>0?'📈 Buen día!':A.neto===0?'🔄 En cero':' ⚠️ En pérdida'}`;
+  // Starlink
+  if(ql.match(/starlink|internet|conexion|sesion/)){
+    const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
+    return`🛰️ **Starlink hoy:**\nMañana: ${sH.filter(v=>v.bl==='manana').length} | Tarde: ${sH.filter(v=>v.bl==='tarde').length}\nTotal: **${sH.length}** = **$${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}**\nHistórico: ${DB.slVentas.length} sesiones`;
   }
-
-  // ── CLIENTES ──
-  if(ql.includes('cliente')){
-    const topCli=[...DB.clientes].sort((a,b)=>(b.totalGastado||0)-(a.totalGastado||0)).slice(0,5);
-    const conFiado=DB.clientes.filter(c=>c.fiado>0);
-    return`👥 **Clientes (${DB.clientes.length} total):**\n\n**Top 5 por monto gastado:**\n${topCli.map((c,i)=>`${i+1}. **${c.nombre}** — $${(c.totalGastado||0).toFixed(2)} (${c.compras||0} compras)`).join('\n')||'Sin datos'}\n\n${conFiado.length>0?`**Con fiado pendiente (${conFiado.length}):**\n${conFiado.map(c=>`· ${c.nombre}: $${c.fiado.toFixed(2)}`).join('\n')}`:'✅ Ningún cliente con fiado pendiente'}`;
+  // Resumen
+  if(ql.match(/resumen|como va|reporte|balance/)){
+    const vH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===hoyStr);
+    const sH=DB.slVentas.filter(v=>v.fecha===hoyF);
+    return`📊 **Resumen del día**\n👤 Cajero: **${SES.cajNom||'Sin sesión'}** ${SES.trn?'('+tL2[SES.trn]+')':''}\n💰 Ventas: ${vH.length} = $${vH.reduce((s,v)=>s+v.total,0).toFixed(2)}\n🛰️ Starlink: ${sH.length} = $${sH.reduce((s,v)=>s+v.precio,0).toFixed(2)}\n📤 Gastos: $${A.egresoTotal.toFixed(2)}\n**NETO: $${A.neto.toFixed(2)}** ${A.neto>0?'📈':'⚠️'}`;
   }
-
-  // ── GASTOS ──
-  if(ql.includes('gasto')||ql.includes('egreso')||ql.includes('compre')||ql.includes('pague')){
-    const gasMes=DB.gastos.filter(g=>{const d=new Date(g.fecha);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
-    const gasH=DB.gastos.filter(g=>g.fecha===hoyF);
-    return`📤 **Gastos:**\n\n**Hoy:** $${gasH.reduce((s,g)=>s+g.monto,0).toFixed(2)}\n${gasH.map(g=>`  · ${g.desc}: $${g.monto.toFixed(2)}`).join('\n')||'  · Ninguno'}\n\n**Este mes:** $${gasMes.reduce((s,g)=>s+g.monto,0).toFixed(2)} (${gasMes.length} registros)\n**Histórico:** $${DB.gastos.reduce((s,g)=>s+g.monto,0).toFixed(2)}`;
-  }
-
-  // ── TOP PRODUCTO ──
-  if(ql.includes('mas se vende')||ql.includes('top')||ql.includes('popular')||ql.includes('mejor')){
-    const pv={};
-    DB.ventas.forEach(v=>(v.items||[]).forEach(i=>{if(!pv[i.nom])pv[i.nom]={q:0,t:0};pv[i.nom].q+=i.qty;pv[i.nom].t+=i.sub;}));
-    const top=Object.entries(pv).sort((a,b)=>b[1].q-a[1].q).slice(0,5);
-    if(!top.length)return'Sin ventas históricas para analizar todavía.';
-    return`🏆 **Top 5 productos más vendidos:**\n\n${top.map((p,i)=>`${i+1}. **${p[0]}** — ${p[1].q} unidades | $${p[1].t.toFixed(2)} recaudado`).join('\n')}`;
-  }
-
-  // ── PRÉSTAMOS ESPECÍFICOS ──
-  if(ql.includes('prestamo')){
-    const dados=DB.prestamos.filter(p=>p.tipo==='dado');
-    const recib=DB.prestamos.filter(p=>p.tipo==='recibido');
-    return`💳 **Préstamos:**\n\n**Dados (me deben a mí) — ${dados.length}:**\n${dados.map(p=>`· **${p.per}**: $${p.monto.toFixed(2)} | Saldo: $${(p.saldo||0).toFixed(2)} | ${p.estado}${p.venc?' | Vence: '+p.venc:''}`).join('\n')||'· Ninguno'}\n\n**Recibidos (debo yo) — ${recib.length}:**\n${recib.map(p=>`· **${p.per}**: $${p.monto.toFixed(2)} | Saldo: $${(p.saldo||0).toFixed(2)} | ${p.estado}`).join('\n')||'· Ninguno'}`;
-  }
-
-  // Respuesta general
-  return`🤖 **SEM Assistant** — Modo sin conexión\n\nTengo acceso a todos los datos guardados. Puedes preguntarme sobre:\n\n👤 **Cajero** — "¿Quién está en turno?"\n💰 **Ventas** — "¿Cuánto vendí hoy/este mes?"\n💵 **Caja** — "¿Cuánto hay en efectivo?"\n⚠️ **Inventario** — "¿Qué productos tienen stock bajo?"\n💸 **Cobros** — "¿Quiénes me deben?"\n🛰️ **Starlink** — "¿Cuántas conexiones hoy?"\n📤 **Gastos** — "¿Cuánto gasté este mes?"\n📊 **Resumen** — "Dame el resumen del día"\n👥 **Clientes** — "¿Cuáles son mis mejores clientes?"\n💳 **Préstamos** — "¿Quién me debe un préstamo?"`;
+  return`🤖 Puedo responder sobre:\n👤 Cajero en turno · 💰 Ventas hoy · 💵 Caja · ⚠️ Stock · 💸 Deudas · 🛰️ Starlink · 📊 Resumen del día\n\n*Sin internet uso datos locales del dispositivo.*`;
 }
 // ═══════════════════════════════════════════════════════════
 // INIT
@@ -3689,83 +3259,34 @@ if(document.readyState==='loading'){
 }
 </script>
 
-<!-- BOTTOM NAV MÓVIL -->
-<nav class="mob-nav">
-  <div class="mob-nav-inner">
-    <button class="mob-nb act" onclick="goPage('dashboard');setMobNav(this)">
-      <span class="ico">📊</span>Inicio
-    </button>
-    <button class="mob-nb" onclick="goPage('caja');setMobNav(this)">
-      <span class="ico">💵</span>Caja
-    </button>
-    <button class="mob-nb" onclick="goPage('ventas');setMobNav(this)">
-      <span class="ico">🧾</span>Ventas
-    </button>
-    <button class="mob-nb" onclick="goPage('starlink');setMobNav(this)">
-      <span class="ico">🛰️</span>Starlink
-    </button>
-    <button class="mob-nb mob-nb-more" onclick="toggleMobMore()">
-      <span class="ico">⋯</span>Más
-    </button>
-  </div>
-</nav>
-<!-- MORE MENU -->
-<div class="mob-more-menu" id="mob-more-menu">
-  <button class="mob-more-item" onclick="goPage('gastos');closeMobMore()">📤 Gastos</button>
-  <button class="mob-more-item" onclick="goPage('prestamos');closeMobMore()">💳 Préstamos</button>
-  <button class="mob-more-item" onclick="goPage('productos');closeMobMore()">📦 Productos</button>
-  <button class="mob-more-item" onclick="goPage('inventario');closeMobMore()">🗄️ Inventario</button>
-  <button class="mob-more-item" onclick="goPage('clientes');closeMobMore()">👥 Clientes</button>
-  <button class="mob-more-item" onclick="goPage('proveedores');closeMobMore()">🏭 Proveedores</button>
-  <button class="mob-more-item" onclick="goPage('cajeros');closeMobMore()">👤 Cajeros</button>
-  <button class="mob-more-item" onclick="goPage('reportes');closeMobMore()">📈 Reportes</button>
-  <button class="mob-more-item" onclick="cerrarSesion();closeMobMore()">🔴 Cerrar Sesión</button>
-</div>
-
-<!-- ═══════════════ CHAT IA ═══════════════ -->
-<button class="ai-btn" id="ai-btn" onclick="toggleAI()" title="Asistente IA SERVICIOSEM">
-  🤖
-  <span class="ai-badge" id="ai-badge">1</span>
-</button>
-
+<!-- CHAT IA -->
+<button class="ai-btn" onclick="toggleAI()" title="Asistente IA SERVICIOSEM">🤖</button>
 <div class="ai-panel" id="ai-panel">
-  <!-- Header -->
   <div class="ai-hdr">
     <div class="ai-hdr-av">🤖</div>
     <div class="ai-hdr-info">
       <div class="ai-hdr-nm">SEM Assistant</div>
       <div class="ai-hdr-st"><span class="ai-dot"></span> Conectado · Conoce tus datos</div>
     </div>
-    <div class="ai-hdr-btns">
-      <button class="ai-hdr-btn" onclick="clearAIChat()" title="Limpiar chat">🗑</button>
-      <button class="ai-hdr-btn" onclick="toggleAI()" title="Cerrar">✕</button>
-    </div>
+    <button class="ai-hdr-btn" onclick="clearAIChat()" style="margin-left:.5rem">🗑</button>
+    <button class="ai-hdr-btn" onclick="toggleAI()">✕</button>
   </div>
-
-  <!-- Mensajes -->
   <div class="ai-msgs" id="ai-msgs"></div>
-
-  <!-- Preguntas rápidas -->
-  <div class="ai-chips" id="ai-chips">
+  <div class="ai-chips">
+    <button class="ai-chip" onclick="askAI('¿Quién está en turno ahora?')">👤 Turno</button>
     <button class="ai-chip" onclick="askAI('¿Cuánto vendí hoy?')">💰 Ventas hoy</button>
-    <button class="ai-chip" onclick="askAI('¿Cuánto hay en efectivo en caja?')">💵 Caja</button>
-    <button class="ai-chip" onclick="askAI('¿Qué productos tienen stock bajo?')">⚠️ Stock bajo</button>
+    <button class="ai-chip" onclick="askAI('¿Cuánto hay en caja?')">💵 Caja</button>
+    <button class="ai-chip" onclick="askAI('¿Qué productos tienen stock bajo?')">⚠️ Stock</button>
     <button class="ai-chip" onclick="askAI('¿Quiénes me deben dinero?')">💸 Deudas</button>
-    <button class="ai-chip" onclick="askAI('¿Cuántas conexiones Starlink hubo hoy?')">🛰️ Starlink</button>
-    <button class="ai-chip" onclick="askAI('Dame un resumen del día')">📊 Resumen día</button>
-    <button class="ai-chip" onclick="askAI('¿Cuáles son mis gastos de este mes?')">📤 Gastos mes</button>
-    <button class="ai-chip" onclick="askAI('¿Cuál es el producto que más se vende?')">🏆 Top producto</button>
+    <button class="ai-chip" onclick="askAI('Dame el resumen completo del día')">📊 Resumen</button>
+    <button class="ai-chip" onclick="askAI('¿Cuántas conexiones Starlink hoy?')">🛰️ Starlink</button>
+    <button class="ai-chip" onclick="askAI('¿Cuáles son mis gastos de este mes?')">📤 Gastos</button>
   </div>
-
-  <!-- Input -->
   <div class="ai-inp-row">
-    <textarea class="ai-inp" id="ai-inp" placeholder="Pregunta lo que quieras sobre tu negocio..." 
-      rows="1" onkeydown="aiKeyDown(event)" oninput="aiAutoResize(this)"></textarea>
+    <textarea class="ai-inp" id="ai-inp" placeholder="Pregunta sobre tu negocio..." rows="1"
+      onkeydown="aiKeyDown(event)" oninput="aiAutoResize(this)"></textarea>
     <button class="ai-send" id="ai-send" onclick="sendAIMsg()">➤</button>
   </div>
 </div>
-
-<!-- FAB nueva venta rápida -->
-<button class="fab" onclick="openModVenta()" title="Nueva Venta">＋</button>
 </body>
 </html>
