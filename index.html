@@ -377,11 +377,10 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
 </header>
 <!-- BARRA DE SINCRONIZACIÓN -->
 <div class="sync-bar">
-  <span id="sync-status">⚙️ <span style="color:var(--accent3);font-size:.65rem;font-weight:700">Nube no configurada</span></span>
+  <span id="sync-status">🔄 <span style="color:var(--accent3);font-size:.65rem;font-weight:700">Conectando...</span></span>
   <span style="flex:1"></span>
-  <button onclick="loadFromCloud(true)" title="Cargar datos desde la nube">⬇️ Cargar</button>
-  <button onclick="syncNow()" title="Guardar datos en la nube">☁️ Guardar</button>
-  <button onclick="setCloudURL()" title="Configurar nube" style="color:var(--accent3)">⚙️ Config</button>
+  <button onclick="syncNow()">🔄 Guardar nube</button>
+  <button onclick="loadFromCloud(true)">⬇️ Cargar nube</button>
 </div>
 
 <!-- NAV -->
@@ -1185,38 +1184,30 @@ function loadDB(){
   saveDB();
 }
 
-// ═══ CLOUD SYNC — Google Apps Script ═══
-// Coloca aquí la URL de tu Web App de Google Apps Script
-let CLOUD_URL = localStorage.getItem('sem_cloud_url') || '';
+// ═══ GOOGLE APPS SCRIPT SYNC ═══
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby5dz7IqbgtoHRD9LAqgnZL8ClstH9yavG1W5YjdpOsENXe1e7G4ian_2UIptlY8Js/exec';
 let cloudSaving=false;let cloudPending=false;let cloudOnline=false;
 
 function saveLocal(){
-  try{
-    localStorage.setItem('sem_v3',JSON.stringify(DB));
-    localStorage.setItem('sem_ses',JSON.stringify(SES));
-    localStorage.setItem('sem_ts',Date.now());
-  }catch(e){}
+  try{localStorage.setItem('sem_v3',JSON.stringify(DB));localStorage.setItem('sem_ses',JSON.stringify(SES));localStorage.setItem('sem_ts',Date.now());}catch(e){}
 }
 
 let cloudTimer=null;
 function saveDB(){
   saveLocal();
-  if(!CLOUD_URL){showSyncStatus('noconfig');return;}
   clearTimeout(cloudTimer);
   cloudTimer=setTimeout(saveCloud,1500);
 }
 
 async function saveCloud(){
-  if(!CLOUD_URL){showSyncStatus('noconfig');return;}
   if(cloudSaving){cloudPending=true;return;}
   cloudSaving=true;
   showSyncStatus('syncing');
   try{
     const ts=Date.now();
     const payload=encodeURIComponent(JSON.stringify({data:DB,ts:ts}));
-    const res=await fetch(CLOUD_URL+'?action=save&payload='+payload);
-    const txt=await res.text();
-    const r=JSON.parse(txt);
+    const res=await fetch(GAS_URL+'?action=save&payload='+payload);
+    const r=JSON.parse(await res.text());
     if(r.ok){
       cloudOnline=true;
       showSyncStatus('ok');
@@ -1234,27 +1225,14 @@ function showSyncStatus(st){
   const el=document.getElementById('sync-status');
   if(!el)return;
   const states={
-    syncing:{ico:'🔄',txt:'Guardando en nube...',col:'var(--accent3)'},
+    syncing:{ico:'🔄',txt:'Guardando...',col:'var(--accent3)'},
     ok:{ico:'☁️✅',txt:'Sincronizado',col:'var(--green)'},
     error:{ico:'⚠️',txt:'Error al guardar',col:'var(--red)'},
-    offline:{ico:'📴',txt:'Sin internet — guardado local',col:'var(--muted2)'},
-    noconfig:{ico:'⚙️',txt:'Nube no configurada',col:'var(--accent3)'},
-    loading:{ico:'⬇️',txt:'Cargando desde nube...',col:'var(--accent)'},
+    offline:{ico:'📴',txt:'Sin internet (local)',col:'var(--muted2)'},
+    loading:{ico:'⬇️',txt:'Cargando nube...',col:'var(--accent)'},
   };
   const s=states[st]||states.offline;
   el.innerHTML=`${s.ico} <span style="color:${s.col};font-size:.65rem;font-weight:700">${s.txt}</span>`;
-}
-
-function setCloudURL(){
-  const url=prompt('Pega aquí la URL de tu Google Apps Script Web App:','');
-  if(url&&url.startsWith('https://')){
-    CLOUD_URL=url.trim();
-    localStorage.setItem('sem_cloud_url',CLOUD_URL);
-    toast('✅ URL guardada. Probando conexión...','success');
-    loadFromCloud(true);
-  }else if(url){
-    toast('URL inválida — debe empezar con https://','error');
-  }
 }
 ['cajeros','clientes','productos','proveedores','ventas','slVentas','gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
 
@@ -3454,39 +3432,30 @@ function localAI(q){
 
 // ═══ SYNC FUNCIONES ═══
 async function syncNow(){
-  if(!CLOUD_URL){
-    const conf=confirm('La nube no está configurada.\n¿Deseas configurarla ahora?');
-    if(conf)setCloudURL();
-    return;
-  }
+  showSyncStatus('syncing');
   await saveCloud();
+  toast('☁️ Sincronizado con la nube','success');
 }
 
 async function loadFromCloud(force){
-  if(!CLOUD_URL){showSyncStatus('noconfig');return;}
   showSyncStatus('loading');
   try{
-    const res=await fetch(CLOUD_URL+'?action=load',{method:'GET'});
-    const txt=await res.text();
-    const r=JSON.parse(txt);
+    const res=await fetch(GAS_URL+'?action=load');
+    const r=JSON.parse(await res.text());
     if(r.ok&&r.data){
-      const cloudDB=r.data;
       const cloudTs=r.ts||0;
       const localTs=parseInt(localStorage.getItem('sem_ts')||0);
       if(force||cloudTs>localTs){
-        DB=cloudDB;
+        DB=r.data;
         ['cajeros','clientes','productos','proveedores','ventas','slVentas',
          'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
         saveLocal();
         localStorage.setItem('sem_ts',cloudTs);
         cloudOnline=true;
         showSyncStatus('ok');
-        setTimeout(()=>{
-          if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
-          toast('☁️ Datos cargados desde la nube — todo actualizado','success');
-        },300);
+        if(document.getElementById('pg-dashboard')?.classList.contains('act')) renderDash();
+        toast('☁️ Datos actualizados desde la nube','success');
       }else{
-        cloudOnline=true;
         showSyncStatus('ok');
         toast('✅ Ya tienes los datos más recientes','info');
       }
@@ -3501,12 +3470,11 @@ async function loadFromCloud(force){
   }
 }
 
+// Al iniciar: cargar desde nube automáticamente
 async function initSync(){
-  if(!CLOUD_URL)return;
   try{
-    const res=await fetch(CLOUD_URL+'?action=load',{method:'GET'});
-    const txt=await res.text();
-    const r=JSON.parse(txt);
+    const res=await fetch(GAS_URL+'?action=load');
+    const r=JSON.parse(await res.text());
     if(r.ok&&r.data&&r.ts){
       const cloudTs=r.ts||0;
       const localTs=parseInt(localStorage.getItem('sem_ts')||0);
@@ -3514,18 +3482,24 @@ async function initSync(){
         DB=r.data;
         ['cajeros','clientes','productos','proveedores','ventas','slVentas',
          'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
-        saveLocal();localStorage.setItem('sem_ts',cloudTs);
-        cloudOnline=true;showSyncStatus('ok');
+        saveLocal();
+        localStorage.setItem('sem_ts',cloudTs);
+        cloudOnline=true;
+        showSyncStatus('ok');
         setTimeout(()=>{
-          if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
+          if(document.getElementById('pg-dashboard')?.classList.contains('act')) renderDash();
           toast('☁️ Datos sincronizados','success');
         },500);
       }else{
-        cloudOnline=true;showSyncStatus('ok');
-        if(localTs>cloudTs&&localTs>0)saveCloud();
+        cloudOnline=true;
+        showSyncStatus('ok');
+        if(localTs>cloudTs&&localTs>0) saveCloud();
       }
     }
-  }catch(e){cloudOnline=false;showSyncStatus('offline');}
+  }catch(e){
+    cloudOnline=false;
+    showSyncStatus('offline');
+  }
 }
 // ═══════════════════════════════════════════════════════════
 // INIT
