@@ -3541,17 +3541,6 @@ async function initSync(){
         if(r.ses&&r.ses.cajId){
           SES=r.ses;
           localStorage.setItem('sem_ses',JSON.stringify(SES));
-          setTimeout(()=>{
-            const lo=document.getElementById('lo');
-            if(lo)lo.style.display='none';
-            updateHdrCajero();renderDash();
-            toast('☁️ Sesión restaurada: '+SES.cajNom,'success');
-          },500);
-        }else{
-          setTimeout(()=>{
-            if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
-            toast('☁️ Datos sincronizados','success');
-          },500);
         }
       }else{
         cloudOnline=true;
@@ -3569,19 +3558,23 @@ async function initSync(){
 // ═══════════════════════════════════════════════════════════
 loadDB();
 // Ensure DOM ready before building grids
-function initApp(){
-  buildLoginGrids();
-  initSync(); // Cargar datos desde nube al iniciar
+async function initApp(){
+  tick();setInterval(tick,1000);
   const h_=new Date().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if($('cc-trn'))$('cc-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
+  // Mostrar pantalla de carga mientras trae datos de la nube
+  showSyncStatus('syncing');
+  await initSync();
+  // Construir grids con datos ya cargados
+  buildLoginGrids();
   if(SES&&SES.cajId){
     updateHdrCajero();
     renderDash();
+    document.getElementById('lo').style.display='none';
   }else{
-    $('lo').style.display='flex';
+    document.getElementById('lo').style.display='flex';
   }
-  tick();setInterval(tick,1000);
 }
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',initApp);
