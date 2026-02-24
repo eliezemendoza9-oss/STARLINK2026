@@ -1205,16 +1205,12 @@ async function saveCloud(){
   showSyncStatus('syncing');
   try{
     const ts=Date.now();
-    // Estrategia: POST con no-cors (funciona siempre, sin restricción de tamaño)
-    // Luego verificamos con un GET de load
     await fetch(GAS_URL,{
       method:'POST',
       mode:'no-cors',
       headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'save',data:DB,ts:ts})
+      body:JSON.stringify({action:'save',data:DB,ses:SES,ts:ts})
     });
-    // POST no-cors no retorna respuesta legible pero sí se ejecuta en el servidor
-    // Guardamos timestamp local y marcamos como sincronizado
     cloudOnline=true;
     localStorage.setItem('sem_ts',ts);
     showSyncStatus('ok');
@@ -1864,7 +1860,7 @@ function guardarGasto(){
   const monto=parseFloat($('g-monto').value)||0;if(monto<=0){toast('Monto debe ser mayor a 0','error');return;}
   const obj={
     id:eid?parseInt(eid):DB.nextId.gas++,
-    codigo:$('g-cod').value,fecha:$('g-fec').value,desc,
+    codigo:$('g-cod').value,fecha:$('g-fec').value+'T'+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),desc,
     cat:$('g-cat').value,monto,pago:$('g-pago').value,
     prov:$('g-prov').value||'',notas:$('g-notas').value,
     cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId
@@ -1932,7 +1928,7 @@ function guardarPrestamo(){
   const tipo=$('p-tipo-val').value;
   const obj={
     id:eid?parseInt(eid):DB.nextId.pre++,
-    codigo:$('p-cod').value,fecha:$('p-fec').value,per,tipo,
+    codigo:$('p-cod').value,fecha:$('p-fec').value+'T'+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),per,tipo,
     monto,pagado,saldo:Math.max(0,monto-pagado),
     venc:$('p-venc').value,estado:$('p-est').value,
     notas:$('p-notas').value,cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId
@@ -2915,7 +2911,7 @@ function guardarCompra(){
   const cmp={
     id:(DB.nextId.cmp=DB.nextId.cmp?DB.nextId.cmp+1:1),
     codigo:'CMP-'+pad(DB.nextId.cmp||1,5),
-    fecha:$('cmp-fec').value,
+    fecha:$('cmp-fec').value+'T'+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
     provId:provId||null,provNom:provNomF,
     items:[...citems],total,
     pagado:est==='pagado'?total:0,
@@ -2932,16 +2928,7 @@ function guardarCompra(){
     const p=DB.productos.find(x=>x.id===it.pid);
     if(p){p.stock+=it.qty;p.costo=it.pu;}
   });
-  // Si es al contado registrar como gasto
-  if(est==='pagado'){
-    const gasto={
-      id:DB.nextId.gas++,codigo:'GAS-'+pad(DB.nextId.gas),
-      fecha:cmp.fecha,desc:'Compra: '+citems.map(i=>i.nom).join(', '),
-      cat:'compra',monto:total,pago,prov:provId||'',
-      cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId
-    };
-    DB.gastos.unshift(gasto);
-  }
+  // Las compras se registran solo en DB.compras, NO en gastos
   saveDB();toast(`Compra ${cmp.codigo} — ${fmt(total)} registrada!`,'success');
   closeMod('mo-compra');citems=[];
   renderProds();renderComprasProds();renderDash();
@@ -3456,6 +3443,13 @@ async function loadFromCloud(force){
         localStorage.setItem('sem_ts',cloudTs);
         cloudOnline=true;
         showSyncStatus('ok');
+        if(r.ses&&r.ses.cajId){
+          SES=r.ses;
+          localStorage.setItem('sem_ses',JSON.stringify(SES));
+          const lo=document.getElementById('lo');
+          if(lo)lo.style.display='none';
+          updateHdrCajero();
+        }
         if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
         toast('☁️ Datos actualizados desde la nube','success');
       }else{
@@ -3490,10 +3484,21 @@ async function initSync(){
         localStorage.setItem('sem_ts',cloudTs);
         cloudOnline=true;
         showSyncStatus('ok');
-        setTimeout(()=>{
-          if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
-          toast('☁️ Datos sincronizados','success');
-        },500);
+        if(r.ses&&r.ses.cajId){
+          SES=r.ses;
+          localStorage.setItem('sem_ses',JSON.stringify(SES));
+          setTimeout(()=>{
+            const lo=document.getElementById('lo');
+            if(lo)lo.style.display='none';
+            updateHdrCajero();renderDash();
+            toast('☁️ Sesión restaurada: '+SES.cajNom,'success');
+          },500);
+        }else{
+          setTimeout(()=>{
+            if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
+            toast('☁️ Datos sincronizados','success');
+          },500);
+        }
       }else{
         cloudOnline=true;
         showSyncStatus('ok');
