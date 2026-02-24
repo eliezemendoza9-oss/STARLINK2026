@@ -1892,7 +1892,7 @@ function renderGastos(){
     return true;
   });
   $('tb-gastos').innerHTML=list.map(g=>`<tr>
-    <td class="tdc">${g.codigo}</td><td>${g.fecha}</td>
+    <td class="tdc">${g.codigo}</td><td>${g.fecha?new Date(g.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
     <td><strong>${g.desc}</strong></td>
     <td><span class="badge bg-o">${catLG[g.cat]||g.cat}</span></td>
     <td style="color:var(--red);font-weight:800">${fmt(g.monto)}</td>
@@ -1997,7 +1997,7 @@ function renderPrestamos(){
     const vencido=p.venc&&p.venc<hoy();
     return`<tr style="${vencido?'background:rgba(255,23,68,.05)':''}">
       <td class="tdc">${p.codigo}</td>
-      <td>${p.fecha}</td>
+      <td>${p.fecha?new Date(p.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
       <td><strong>${p.per}</strong></td>
       <td style="font-weight:800;color:var(--orange)">${fmt(p.monto)}</td>
       <td class="text-g">${fmt(p.pagado||0)}</td>
@@ -2018,7 +2018,7 @@ function renderPrestamos(){
     return true;
   });
   $('tb-prestamos').innerHTML=list.map(p=>`<tr>
-    <td class="tdc">${p.codigo}</td><td>${p.fecha}</td>
+    <td class="tdc">${p.codigo}</td><td>${p.fecha?new Date(p.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
     <td><strong>${p.per}</strong></td>
     <td><span class="badge ${p.tipo==='dado'?'bg-o':'bg-p'}">${p.tipo==='dado'?'💸 Dado':'💳 Recibido'}</span></td>
     <td style="font-weight:800">${fmt(p.monto)}</td>
@@ -2974,7 +2974,7 @@ function renderComprasProds(){
   const lista=DB.compras||[];
   tb.innerHTML=lista.length?lista.map(c=>`<tr>
     <td class="tdc">${c.codigo}</td>
-    <td>${c.fecha}</td>
+    <td>${c.fecha?new Date(c.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
     <td><strong>${c.provNom}</strong></td>
     <td style="font-size:.75rem">${c.items.map(i=>`${i.nom} ×${i.qty}`).join(', ')}</td>
     <td style="font-weight:800;color:var(--purple)">${fmt(c.total)}</td>
