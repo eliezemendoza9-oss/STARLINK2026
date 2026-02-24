@@ -1485,48 +1485,78 @@ function guardarSL(){
   else if(cliId){cliNom=DB.clientes.find(c=>c.id===cliId)?.nombre||'?';}
   const bl=$('sl-bl').value;const he=$('sl-he').value;const hc=$('sl-hc').value;
   const fe=$('sl-fe').value;const pr=parseFloat($('sl-pr').value)||0;const pg=$('sl-pg').value;
-  const v={id:DB.nextId.sl++,fecha:fe,cliId:cliIdF,cliNom,bl,he,hc,precio:pr,pago:pg,
-    notas:$('sl-nt').value,cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId,estado:'activo'};
-  DB.slVentas.unshift(v);
+  const blNom=bl==='manana'?'Internet Starlink Mañana (8am–3pm)':'Internet Starlink Tarde (3pm–10pm)';
+  const notas=$('sl-nt').value;
+  // Guardar en slVentas (legacy/historial propio)
+  const sl={id:DB.nextId.sl++,fecha:fe,cliId:cliIdF,cliNom,bl,he,hc,precio:pr,pago:pg,
+    notas,cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId,estado:'activo'};
+  DB.slVentas.unshift(sl);
+  // También guardar en DB.ventas para conectar con reportes, dashboard, inventario
+  const vtaId=DB.nextId.vta++;
+  const vta={
+    id:vtaId,folio:'VTA-'+pad(vtaId,5),
+    fecha:fe+'T'+he+':00',
+    cliId:cliIdF,cliNom,
+    items:[{pid:null,cod:'SL',nom:blNom,und:'bloque',qty:1,pu:pr,sub:pr,
+      slBl:bl,slHe:he,slHc:hc}],
+    sub:pr,desc:0,itbms:0,itbmsMonto:0,total:pr,
+    pago:pg,estado:'pagado',cuotas:1,
+    notas:'Starlink — Entrada: '+he+' — Cierre: '+hc+(notas?' — '+notas:''),
+    cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId,
+    esStarlink:true,slBl:bl,slHe:he,slHc:hc
+  };
+  DB.ventas.unshift(vta);
   if(cliIdF){const c=DB.clientes.find(x=>x.id===cliIdF);if(c){c.totalGastado+=pr;c.compras++;}}
   if(SES.cajId){const cj=DB.cajeros.find(x=>x.id===SES.cajId);if(cj){cj.ventas++;cj.total+=pr;}}
   if(SES.trnId){const t=DB.turnos.find(x=>x.id===SES.trnId);if(t){t.ventas++;t.total+=pr;}}
-  saveDB();toast(`Starlink — ${cliNom} — ${fmt(pr)}`,'success');closeMod('mo-sl');renderStarlink();renderDash();
+  saveDB();toast(`🛰️ Starlink — ${cliNom} — ${fmt(pr)}`,'success');closeMod('mo-sl');renderStarlink();renderDash();
 }
 function renderStarlink(){
-  // Ventas que contienen productos Starlink
-  const slVentas=(DB.ventas||[]).filter(v=>(v.items||[]).some(i=>(i.nom||'').toLowerCase().includes('starlink')));
-  // También incluir registros de slVentas legacy
-  const legacy=DB.slVentas||[];
+  const slLegacy=DB.slVentas||[];
+  const slNuevas=(DB.ventas||[]).filter(v=>v.esStarlink);
+  const todos=[...slNuevas.map(v=>({
+    id:v.id,folio:v.folio,fecha:v.fecha,cliNom:v.cliNom,
+    bl:v.slBl,he:v.slHe,hc:v.slHc,precio:v.total,pago:v.pago,
+    cajNom:v.cajNom,esNueva:true
+  })),...slLegacy.map(v=>({...v,folio:'SL-'+pad(v.id,4),esNueva:false}))];
   const hoyStr2=hoy();
-  const hoyV=slVentas.filter(v=>v.fecha&&v.fecha.startsWith(hoyStr2));
-  const totalHoy=hoyV.reduce((s,v)=>s+v.total,0);
-  const totalLegacy=legacy.reduce((s,v)=>s+v.precio,0);
-  const totalGeneral=slVentas.reduce((s,v)=>s+v.total,0)+totalLegacy;
-  // Bloques de resumen
+  const hoyV=todos.filter(v=>(v.fecha||'').startsWith(hoyStr2));
+  const mananaHoy=hoyV.filter(v=>v.bl==='manana');
+  const tardeHoy=hoyV.filter(v=>v.bl==='tarde');
+  const totalHoy=hoyV.reduce((s,v)=>s+(v.precio||0),0);
+  const totalGeneral=todos.reduce((s,v)=>s+(v.precio||0),0);
   const bl=$('sl-blocks');
   if(bl)bl.innerHTML=`
-    <div class="sc"><div class="sc-bg">🌐</div><div class="sc-ic">🌐</div><div class="sc-v" style="color:var(--accent)">${hoyV.length}</div><div class="sc-l">Conexiones Hoy</div></div>
+    <div class="sc"><div class="sc-bg">🌅</div><div class="sc-ic">🌅</div><div class="sc-v" style="color:var(--accent)">${mananaHoy.length}</div><div class="sc-l">Mañana Hoy</div></div>
+    <div class="sc"><div class="sc-bg">🌇</div><div class="sc-ic">🌇</div><div class="sc-v" style="color:var(--accent3)">${tardeHoy.length}</div><div class="sc-l">Tarde Hoy</div></div>
     <div class="sc"><div class="sc-bg">💰</div><div class="sc-ic">💰</div><div class="sc-v" style="color:var(--green)">${fmt(totalHoy)}</div><div class="sc-l">Recaudado Hoy</div></div>
     <div class="sc"><div class="sc-bg">📊</div><div class="sc-ic">📊</div><div class="sc-v">${fmt(totalGeneral)}</div><div class="sc-l">Total Histórico</div></div>`;
-  // Tabla historial
   const tb=$('tb-sl');if(!tb)return;
   const q=($('ssl')?.value||'').toLowerCase();
-  const list=[...slVentas].filter(v=>!q||v.cliNom.toLowerCase().includes(q)||(v.items||[]).some(i=>(i.nom||'').toLowerCase().includes(q)));
+  const list=todos.filter(v=>!q||v.cliNom.toLowerCase().includes(q));
+  const blL={manana:'🌅 Mañana',tarde:'🌇 Tarde'};
   tb.innerHTML=list.length?list.map(v=>`<tr>
-    <td class="tdc">${v.folio}</td>
+    <td class="tdc">${v.folio||'—'}</td>
     <td style="font-size:.78rem">${v.fecha?new Date(v.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
     <td><strong>${v.cliNom}</strong></td>
-    <td style="font-size:.75rem">${(v.items||[]).filter(i=>(i.nom||'').toLowerCase().includes('starlink')).map(i=>i.nom+'×'+i.qty).join(', ')}</td>
-    <td style="color:var(--green);font-weight:800">${fmt(v.total)}</td>
+    <td>${blL[v.bl]||v.bl||'—'}</td>
+    <td style="font-size:.78rem">${v.he||'—'} → ${v.hc||'—'}</td>
+    <td style="color:var(--green);font-weight:800">${fmt(v.precio||0)}</td>
     <td>${v.pago||'—'}</td>
     <td style="font-size:.68rem">${v.cajNom||'—'}</td>
-    <td><button class="btn bp bxs" onclick="showRecibo(${v.id},'simple');openMod('mo-recibo')">🧾</button>
-        <button class="btn bd bxs bic" onclick="delVenta(${v.id})">🗑️</button></td>
-  </tr>`).join('')+'<tr><td colspan="8" style="text-align:center;color:var(--muted);font-size:.75rem;padding:.5rem">— Registros legacy Starlink: ${legacy.length} —</td></tr>'
-  :'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1.2rem">Sin conexiones Starlink registradas</td></tr>';
+    <td style="display:flex;gap:.25rem">
+      ${v.esNueva?`<button class="btn bp bxs" onclick="showRecibo(${v.id},'simple');openMod('mo-recibo')">🧾</button>
+      <button class="btn bd bxs" onclick="delVenta(${v.id});renderStarlink()">🗑️</button>`
+      :`<button class="btn bd bxs" onclick="delSL(${v.id})">🗑️</button>`}
+    </td>
+  </tr>`).join('')
+  :'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1.2rem">Sin conexiones Starlink registradas</td></tr>';
 }
-
+function delSL(id){
+  if(!confirm('¿Eliminar este registro Starlink?'))return;
+  DB.slVentas=DB.slVentas.filter(x=>x.id!==id);
+  saveDB();toast('Registro eliminado','info');renderStarlink();renderDash();
+}
 function renderSL(){
   const q=($('ssl')?.value||'').toLowerCase();const fb=$('fsl-bl')?.value||'';const ff=$('fsl-dt')?.value||'';
   const blL={manana:'🌅 Mañana',tarde:'🌇 Tarde'};
@@ -1627,10 +1657,7 @@ function guardarVenta(){
     fecha:new Date().toISOString(),cliId:cliIdF,cliNom,items:[...vitems],
     sub,desc,itbms:itbmsPct,itbmsMonto,total:tot,pago,estado:est,cuotas:cuotas||1,notas:$('v-notas').value,
     cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId};
-  const eid=$('v-eid')?parseInt($('v-eid').value)||0:0;
-  if(eid){const i=DB.ventas.findIndex(x=>x.id===eid);if(i>=0){v.id=eid;v.folio=DB.ventas[i].folio;DB.ventas[i]=v;}else DB.ventas.unshift(v);}
-  else DB.ventas.unshift(v);
-  if($('v-eid'))$('v-eid').value='';
+  DB.ventas.unshift(v);
   vitems.forEach(it=>{const p=DB.productos.find(x=>x.id===it.pid);if(p&&p.cat!=='internet')p.stock=Math.max(0,p.stock-it.qty);});
   if(cliIdF){const c=DB.clientes.find(x=>x.id===cliIdF);if(c){c.totalGastado+=tot;c.compras++;if(est==='fiado')c.fiado=(c.fiado||0)+tot;}}
   if(SES.cajId){const cj=DB.cajeros.find(x=>x.id===SES.cajId);if(cj){cj.ventas++;cj.total+=tot;}}
@@ -1710,8 +1737,8 @@ function renderVentas(){
     <td style="font-size:.78rem">${v.cajNom||'—'}</td>
     <td style="display:flex;gap:.2rem;flex-wrap:wrap">
       <button class="btn bo bxs" onclick="verVenta(${v.id})" title="Detalle">👁</button>
-      <button class="btn bs bxs" onclick="editVenta(${v.id})" title="Editar">✏️</button>
       <button class="btn bp bxs" onclick="showRecibo(${v.id},'simple');openMod('mo-recibo')" title="Ticket">🧾</button>
+      <button class="btn bo bxs" onclick="showRecibo(${v.id},'fiscal');openMod('mo-recibo')" title="Fiscal">📜</button>
       <button class="btn bd bxs bic" onclick="delVenta(${v.id})">🗑️</button>
     </td>
   </tr>`).join('')||'<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:1.2rem">Sin ventas</td></tr>';
@@ -1735,29 +1762,6 @@ function verVenta(id){
       <button class="btn bo bsm" onclick="showRecibo(${v.id},'fiscal');openMod('mo-recibo')">📜 Formato Fiscal</button>
     </div>`;
   openMod('mo-detalle');
-}
-function editVenta(id){
-  const v=DB.ventas.find(x=>x.id===id);if(!v)return;
-  openModVenta();
-  setTimeout(()=>{
-    // Marcar como edición
-    $('v-folio').value=v.folio;
-    if($('v-eid'))$('v-eid').value=v.id;
-    else{const h=document.createElement('input');h.type='hidden';h.id='v-eid';h.value=v.id;$('mo-venta').appendChild(h);}
-    // Llenar cliente
-    if(v.cliId)$('v-cli').value=v.cliId;
-    else $('v-clin').value=v.cliNom!=='General'?v.cliNom:'';
-    $('v-desc').value=v.desc||0;
-    $('v-notas').value=v.notas||'';
-    if($('v-est'))$('v-est').value=v.estado||'pagado';
-    if($('v-pago'))$('v-pago').value=v.pago||'efectivo';
-    // Restaurar items
-    vitems=[...v.items];
-    vRenderItems();
-    // Cambiar título modal
-    const tit=document.querySelector('#mo-venta .mod-title');
-    if(tit)tit.textContent='✏️ Editar Venta '+v.folio;
-  },100);
 }
 function delVenta(id){if(!confirm('¿Eliminar venta?'))return;DB.ventas=DB.ventas.filter(v=>v.id!==id);saveDB();toast('Eliminada','info');renderVentas();renderDash();}
 
@@ -2937,16 +2941,6 @@ function cmpRenderItems(){
   $('cmp-total').textContent=fmt(tot);
 }
 function cmpDelItem(i){citems.splice(i,1);cmpRenderItems();}
-function delCompra(id){
-  if(!confirm('¿Eliminar esta compra?'))return;
-  const c=DB.compras.find(x=>x.id===id);
-  if(c){
-    // Revertir stock
-    (c.items||[]).forEach(it=>{const p=DB.productos.find(x=>x.id===it.pid);if(p)p.stock=Math.max(0,p.stock-it.qty);});
-  }
-  DB.compras=DB.compras.filter(x=>x.id!==id);
-  saveDB();toast('Compra eliminada','info');renderComprasProds();renderDash();
-}
 function guardarCompra(){
   if(citems.length===0){toast('Agrega al menos un producto','error');return;}
   const provId=$('cmp-prov').value;const provNom=$('cmp-provn').value.trim();
@@ -3031,7 +3025,6 @@ function renderComprasProds(){
     <td style="display:flex;gap:.25rem;flex-wrap:wrap">
       ${c.estado!=='pagado'?`<button class="btn bs bxs" onclick="pagarCompra(${c.id})">💰 Pagar</button>`:''}
       <button class="btn bp bxs" onclick="showReciboCompra(${c.id})">🧾</button>
-      <button class="btn bd bxs bic" onclick="delCompra(${c.id})">🗑️</button>
     </td>
   </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1.2rem">✅ Sin compras pendientes</td></tr>';
 }
