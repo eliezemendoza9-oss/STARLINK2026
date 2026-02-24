@@ -894,10 +894,10 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
       <div class="fgr" style="margin:0"><label>Subtotal</label><input id="v-ls" readonly style="color:var(--green);font-weight:800;"></div>
       <button class="btn bp bsm" onclick="vAddItem()" style="align-self:flex-end;margin-bottom:0">+ Add</button>
     </div>
-    <!-- Campos extra Starlink — aparecen solo cuando el producto es Starlink -->
-    <div id="v-sl-row" style="display:none;background:rgba(0,255,255,.06);border:1px solid rgba(0,255,255,.2);border-radius:8px;padding:.6rem .75rem;margin-bottom:.6rem;grid-template-columns:1fr 1fr 1fr;gap:.5rem" class="fg">
-      <div class="fgr" style="margin:0"><label>🛰️ Bloque</label><select id="v-sl-bl" onchange="vSlUpdateCierre()"><option value="manana">🌅 Mañana (8am–3pm)</option><option value="tarde">🌇 Tarde (3pm–10pm)</option></select></div>
-      <div class="fgr" style="margin:0"><label>⏰ Hora Entrada</label><input type="time" id="v-sl-he" oninput="vSlUpdateCierre()"></div>
+    <!-- Campos Starlink — aparecen solo si el producto es Starlink -->
+    <div id="v-sl-row" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:.5rem;background:rgba(0,255,255,.06);border:1px solid rgba(0,255,255,.2);border-radius:8px;padding:.6rem .75rem;margin-bottom:.6rem" class="fg">
+      <div class="fgr" style="margin:0"><label>🛰️ Bloque</label><select id="v-sl-bl" onchange="vSlBl()"><option value="manana">🌅 Mañana (8am–3pm)</option><option value="tarde">🌇 Tarde (3pm–10pm)</option></select></div>
+      <div class="fgr" style="margin:0"><label>⏰ Hora Entrada</label><input type="time" id="v-sl-he"></div>
       <div class="fgr" style="margin:0"><label>🔒 Hora Cierre</label><input type="time" id="v-sl-hc" readonly style="color:var(--muted2)"></div>
     </div>
     <div id="v-items" style="min-height:36px;margin-bottom:.5rem"></div>
@@ -1500,46 +1500,42 @@ function guardarSL(){
   saveDB();toast(`Starlink — ${cliNom} — ${fmt(pr)}`,'success');closeMod('mo-sl');renderStarlink();renderDash();
 }
 function renderStarlink(){
-  // Solo ventas que tienen items con datos Starlink (slBl)
-  const slVentas=(DB.ventas||[]).filter(v=>(v.items||[]).some(i=>i.slBl));
   const slLegacy=DB.slVentas||[];
+  const slNuevas=(DB.ventas||[]).filter(v=>(v.items||[]).some(i=>i.slBl));
   const hoyStr2=hoy();
-  const hoyV=slVentas.filter(v=>(v.fecha||'').startsWith(hoyStr2));
-  const legHoy=slLegacy.filter(v=>(v.fecha||'').startsWith(hoyStr2));
-  const mananaHoy=[...hoyV.filter(v=>(v.items||[]).some(i=>i.slBl==='manana')),...legHoy.filter(v=>v.bl==='manana')];
-  const tardeHoy=[...hoyV.filter(v=>(v.items||[]).some(i=>i.slBl==='tarde')),...legHoy.filter(v=>v.bl==='tarde')];
-  const totalHoy=[...hoyV,...legHoy].reduce((s,v)=>s+(v.total||v.precio||0),0);
-  const totalGeneral=[...slVentas,...slLegacy].reduce((s,v)=>s+(v.total||v.precio||0),0);
+  const hoyN=slNuevas.filter(v=>(v.fecha||'').startsWith(hoyStr2));
+  const hoyL=slLegacy.filter(v=>(v.fecha||'').startsWith(hoyStr2));
+  const manHoy=[...hoyN.filter(v=>(v.items||[]).some(i=>i.slBl==='manana')),...hoyL.filter(v=>v.bl==='manana')];
+  const tarHoy=[...hoyN.filter(v=>(v.items||[]).some(i=>i.slBl==='tarde')),...hoyL.filter(v=>v.bl==='tarde')];
+  const totalHoy=[...hoyN,...hoyL].reduce((s,v)=>s+(v.total||v.precio||0),0);
+  const totalGen=[...slNuevas,...slLegacy].reduce((s,v)=>s+(v.total||v.precio||0),0);
   const bl=$('sl-blocks');
   if(bl)bl.innerHTML=`
-    <div class="sc"><div class="sc-bg">🌅</div><div class="sc-ic">🌅</div><div class="sc-v" style="color:var(--accent)">${mananaHoy.length}</div><div class="sc-l">Mañana Hoy</div></div>
-    <div class="sc"><div class="sc-bg">🌇</div><div class="sc-ic">🌇</div><div class="sc-v" style="color:var(--accent3)">${tardeHoy.length}</div><div class="sc-l">Tarde Hoy</div></div>
+    <div class="sc"><div class="sc-bg">🌅</div><div class="sc-ic">🌅</div><div class="sc-v" style="color:var(--accent)">${manHoy.length}</div><div class="sc-l">Mañana Hoy</div></div>
+    <div class="sc"><div class="sc-bg">🌇</div><div class="sc-ic">🌇</div><div class="sc-v" style="color:var(--accent3)">${tarHoy.length}</div><div class="sc-l">Tarde Hoy</div></div>
     <div class="sc"><div class="sc-bg">💰</div><div class="sc-ic">💰</div><div class="sc-v" style="color:var(--green)">${fmt(totalHoy)}</div><div class="sc-l">Recaudado Hoy</div></div>
-    <div class="sc"><div class="sc-bg">📊</div><div class="sc-ic">📊</div><div class="sc-v">${fmt(totalGeneral)}</div><div class="sc-l">Total Histórico</div></div>`;
+    <div class="sc"><div class="sc-bg">📊</div><div class="sc-ic">📊</div><div class="sc-v">${fmt(totalGen)}</div><div class="sc-l">Total Histórico</div></div>`;
   const tb=$('tb-sl');if(!tb)return;
   const q=($('ssl')?.value||'').toLowerCase();
-  // Filas de ventas nuevas con Starlink
-  const rowsNuevas=slVentas.filter(v=>!q||v.cliNom.toLowerCase().includes(q)).map(v=>{
-    const slItem=(v.items||[]).find(i=>i.slBl);
+  const rowsN=slNuevas.filter(v=>!q||v.cliNom.toLowerCase().includes(q)).map(v=>{
+    const si=(v.items||[]).find(i=>i.slBl);
     return `<tr>
       <td class="tdc">${v.folio}</td>
       <td style="font-size:.78rem">${v.fecha?new Date(v.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
       <td><strong>${v.cliNom}</strong></td>
-      <td>${slItem?.slBl==='manana'?'🌅 Mañana':'🌇 Tarde'}</td>
-      <td style="font-size:.78rem">${slItem?.slHe||'—'} → ${slItem?.slHc||'—'}</td>
+      <td>${si?.slBl==='manana'?'🌅 Mañana':'🌇 Tarde'}</td>
+      <td style="font-size:.78rem">${si?.slHe||'—'} → ${si?.slHc||'—'}</td>
       <td style="color:var(--green);font-weight:800">${fmt(v.total)}</td>
       <td>${v.pago||'—'}</td>
       <td style="font-size:.68rem">${v.cajNom||'—'}</td>
       <td style="display:flex;gap:.25rem">
         <button class="btn bp bxs" onclick="showRecibo(${v.id},'simple');openMod('mo-recibo')">🧾</button>
         <button class="btn bd bxs" onclick="delVenta(${v.id});renderStarlink()">🗑️</button>
-      </td>
-    </tr>`;
+      </td></tr>`;
   });
-  // Filas legacy
-  const rowsLegacy=slLegacy.filter(v=>!q||v.cliNom.toLowerCase().includes(q)).map(v=>`<tr>
+  const rowsL=slLegacy.filter(v=>!q||v.cliNom.toLowerCase().includes(q)).map(v=>`<tr>
     <td class="tdc" style="color:var(--muted2)">SL-${pad(v.id,4)}</td>
-    <td style="font-size:.78rem">${v.fecha?new Date(v.fecha).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}</td>
+    <td style="font-size:.78rem">${v.fecha||'—'}</td>
     <td><strong>${v.cliNom}</strong></td>
     <td>${v.bl==='manana'?'🌅 Mañana':'🌇 Tarde'}</td>
     <td style="font-size:.78rem">${v.he||'—'} → ${v.hc||'—'}</td>
@@ -1548,8 +1544,8 @@ function renderStarlink(){
     <td style="font-size:.68rem">${v.cajNom||'—'}</td>
     <td><button class="btn bd bxs" onclick="delSL(${v.id})">🗑️</button></td>
   </tr>`);
-  const allRows=[...rowsNuevas,...rowsLegacy];
-  tb.innerHTML=allRows.length?allRows.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1.2rem">Sin conexiones Starlink registradas</td></tr>';
+  const all=[...rowsN,...rowsL];
+  tb.innerHTML=all.length?all.join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1.2rem">Sin conexiones Starlink</td></tr>';
 }
 
 function delSL(id){if(!confirm('¿Eliminar?'))return;DB.slVentas=DB.slVentas.filter(v=>v.id!==id);saveDB();toast('Eliminado','info');renderStarlink();}
@@ -1579,25 +1575,26 @@ function vAutoFill(){
   const sel=$('v-psel');const opt=sel.options[sel.selectedIndex];
   if(!opt.value)return;
   $('v-pu').value=opt.dataset.p||0;vCalcLine();
-  // Mostrar campos Starlink si el producto tiene "starlink" en el nombre
-  const nom=(opt.text||'').toLowerCase();
+  // Si el producto tiene "starlink" mostrar campos extra automáticamente
+  const esSL=(opt.text||'').toLowerCase().includes('starlink');
   const slRow=$('v-sl-row');
-  if(slRow){
-    if(nom.includes('starlink')){
-      slRow.style.display='grid';
-      const now=new Date();
-      $('v-sl-he').value=pad(now.getHours(),2)+':'+pad(now.getMinutes(),2);
-      $('v-sl-bl').value=now.getHours()<15?'manana':'tarde';
-      vSlUpdateCierre();
-    }else{
-      slRow.style.display='none';
-    }
+  if(!slRow)return;
+  if(esSL){
+    slRow.style.display='grid';
+    const now=new Date();
+    const h=now.getHours();
+    // Bloque automático por hora
+    const bl=h<15?'manana':'tarde';
+    $('v-sl-bl').value=bl;
+    $('v-sl-he').value=pad(h,2)+':'+pad(now.getMinutes(),2);
+    $('v-sl-hc').value=bl==='manana'?'15:00':'22:00';
+  }else{
+    slRow.style.display='none';
   }
 }
-function vSlUpdateCierre(){
-  const bl=$('v-sl-bl')?.value;
-  const hc=$('v-sl-hc');
-  if(hc)hc.value=bl==='manana'?'15:00':'22:00';
+function vSlBl(){
+  const bl=$('v-sl-bl').value;
+  $('v-sl-hc').value=bl==='manana'?'15:00':'22:00';
 }
 function vCalcLine(){
   const q=parseFloat($('v-qty').value)||0;const p=parseFloat($('v-pu').value)||0;
@@ -1607,24 +1604,17 @@ function vAddItem(){
   const pid=parseInt($('v-psel').value);if(!pid){toast('Selecciona un producto','error');return;}
   const qty=parseFloat($('v-qty').value)||1;const pu=parseFloat($('v-pu').value)||0;
   const pr=DB.productos.find(p=>p.id===pid);
-  const esStarlink=pr&&pr.nombre.toLowerCase().includes('starlink');
-  // Si es Starlink, verificar que se llenaron los campos
-  if(esStarlink){
-    const he=$('v-sl-he')?.value;
-    if(!he){toast('Ingresa la hora de entrada Starlink','error');return;}
-  }
+  const esSL=pr&&pr.nombre.toLowerCase().includes('starlink');
   const item={pid,cod:pr.codigo,nom:pr.nombre,und:pr.und,qty,pu,sub:qty*pu};
-  // Agregar datos Starlink al item
-  if(esStarlink){
+  if(esSL){
     item.slBl=$('v-sl-bl')?.value||'manana';
     item.slHe=$('v-sl-he')?.value||'';
     item.slHc=$('v-sl-hc')?.value||'';
   }
-  const ex=vitems.find(i=>i.pid===pid&&i.pu===pu&&!esStarlink);
+  const ex=vitems.find(i=>i.pid===pid&&i.pu===pu&&!esSL);
   if(ex){ex.qty+=qty;ex.sub=ex.qty*ex.pu;}
   else vitems.push(item);
-  // Ocultar campos Starlink después de agregar
-  if(esStarlink&&$('v-sl-row'))$('v-sl-row').style.display='none';
+  if(esSL&&$('v-sl-row'))$('v-sl-row').style.display='none';
   vRenderItems();
 }
 function vRenderItems(){
@@ -1633,7 +1623,7 @@ function vRenderItems(){
       <div class="vi-c">${it.cod}</div>
       <div style="flex:1"><div style="font-size:.78rem;font-weight:700">${it.nom}</div>
         <div style="font-size:.65rem;color:var(--muted2)">${it.qty} ${undL[it.und]||it.und} × ${fmt(it.pu)}</div>
-        ${it.slBl?`<div style="font-size:.65rem;color:var(--accent)">🛰️ ${it.slBl==='manana'?'Mañana':'Tarde'} · Entrada: ${it.slHe} · Cierre: ${it.slHc}</div>`:''}
+        ${it.slBl?`<div style="font-size:.65rem;color:var(--accent)">🛰️ ${it.slBl==='manana'?'🌅 Mañana':'🌇 Tarde'} · Entrada: ${it.slHe} · Cierre: ${it.slHc}</div>`:''}
       </div>
       <div class="vi-t">${fmt(it.sub)}</div>
       <button class="btn bd bxs bic" onclick="vDelItem(${i})">✕</button>
@@ -3541,6 +3531,17 @@ async function initSync(){
         if(r.ses&&r.ses.cajId){
           SES=r.ses;
           localStorage.setItem('sem_ses',JSON.stringify(SES));
+          setTimeout(()=>{
+            const lo=document.getElementById('lo');
+            if(lo)lo.style.display='none';
+            updateHdrCajero();renderDash();
+            toast('☁️ Sesión restaurada: '+SES.cajNom,'success');
+          },500);
+        }else{
+          setTimeout(()=>{
+            if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
+            toast('☁️ Datos sincronizados','success');
+          },500);
         }
       }else{
         cloudOnline=true;
@@ -3558,23 +3559,19 @@ async function initSync(){
 // ═══════════════════════════════════════════════════════════
 loadDB();
 // Ensure DOM ready before building grids
-async function initApp(){
-  tick();setInterval(tick,1000);
+function initApp(){
+  buildLoginGrids();
+  initSync(); // Cargar datos desde nube al iniciar
   const h_=new Date().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if($('cc-trn'))$('cc-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
-  // Mostrar pantalla de carga mientras trae datos de la nube
-  showSyncStatus('syncing');
-  await initSync();
-  // Construir grids con datos ya cargados
-  buildLoginGrids();
   if(SES&&SES.cajId){
     updateHdrCajero();
     renderDash();
-    document.getElementById('lo').style.display='none';
   }else{
-    document.getElementById('lo').style.display='flex';
+    $('lo').style.display='flex';
   }
+  tick();setInterval(tick,1000);
 }
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',initApp);
