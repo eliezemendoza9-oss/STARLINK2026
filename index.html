@@ -1767,19 +1767,30 @@ function verVenta(id){
   openMod('mo-detalle');
 }
 function delVenta(id){
-  if(!confirm('¿Eliminar venta? El stock será restaurado.'))return;
+  if(!confirm('¿Eliminar esta venta?'))return;
   const v=DB.ventas.find(x=>x.id===id);
-  if(v){
-    (v.items||[]).forEach(it=>{
-      const p=DB.productos.find(x=>x.id===it.pid);
-      if(p&&p.cat!=='internet')p.stock=(p.stock||0)+it.qty;
-    });
-    if(v.cliId){const c=DB.clientes.find(x=>x.id===v.cliId);if(c){c.totalGastado=Math.max(0,(c.totalGastado||0)-v.total);c.compras=Math.max(0,(c.compras||0)-1);if(v.estado==='fiado')c.fiado=Math.max(0,(c.fiado||0)-v.total);}}
-    if(v.cajId){const cj=DB.cajeros.find(x=>x.id===v.cajId);if(cj){cj.ventas=Math.max(0,(cj.ventas||0)-1);cj.total=Math.max(0,(cj.total||0)-v.total);}}
-    if(v.trnId){const t=DB.turnos.find(x=>x.id===v.trnId);if(t){t.ventas=Math.max(0,(t.ventas||0)-1);t.total=Math.max(0,(t.total||0)-v.total);}}
-  }
+  if(!v){toast('Venta no encontrada','error');return;}
+  // Restaurar stock de cada producto
+  const restaurados=[];
+  (v.items||[]).forEach(it=>{
+    const p=DB.productos.find(x=>x.id===it.pid);
+    if(p&&p.cat!=='internet'){
+      const antes=p.stock||0;
+      p.stock=antes+it.qty;
+      restaurados.push(`${p.nombre}: ${antes} → ${p.stock}`);
+    }
+  });
+  // Revertir stats cliente
+  if(v.cliId){const c=DB.clientes.find(x=>x.id===v.cliId);if(c){c.totalGastado=Math.max(0,(c.totalGastado||0)-v.total);c.compras=Math.max(0,(c.compras||0)-1);if(v.estado==='fiado')c.fiado=Math.max(0,(c.fiado||0)-v.total);}}
+  // Revertir cajero y turno
+  if(v.cajId){const cj=DB.cajeros.find(x=>x.id===v.cajId);if(cj){cj.ventas=Math.max(0,(cj.ventas||0)-1);cj.total=Math.max(0,(cj.total||0)-v.total);}}
+  if(v.trnId){const t=DB.turnos.find(x=>x.id===v.trnId);if(t){t.ventas=Math.max(0,(t.ventas||0)-1);t.total=Math.max(0,(t.total||0)-v.total);}}
   DB.ventas=DB.ventas.filter(x=>x.id!==id);
-  saveDB();toast('Venta eliminada — stock restaurado','info');renderVentas();renderDash();
+  saveDB();
+  // Mensaje con detalle del stock restaurado
+  const msg=restaurados.length?'✅ Stock restaurado:\n'+restaurados.join('\n'):'✅ Venta eliminada';
+  toast(msg,'success');
+  renderVentas();renderDash();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1856,7 +1867,7 @@ function renderReciboContent(v,ft){
         </div>
         <div style="padding:.3rem .8rem;background:#f8faff;border-top:1px solid #dde4f0">
           ${reciboFila('Subtotal',`$${(v.sub||0).toFixed(2)}`,{muted:true})}
-          ${reciboFila(`Descuento (${v.desc||0}%)`,v.desc?`-$${((v.sub||0)*v.desc/100).toFixed(2)}`:'$0.00',{color:v.desc?'#cc3300':'#999',muted:true})}
+          ${reciboFila(`Descuento (${v.desc||0}%)`,`-$${(((v.sub||0)*(v.desc||0))/100).toFixed(2)}`,{muted:true,color:v.desc?'#cc3300':'#999'})}
           ${reciboFila(`ITBMS (${v.itbms||0}%)`,`$${(v.itbmsMonto||0).toFixed(2)}`,{muted:true})}
           ${reciboFila('TOTAL A PAGAR',`$${v.total.toFixed(2)}`,{big:true,border:true,color:'#006633'})}
           ${reciboFila('Estado',`${v.estado.toUpperCase()}`,{color:v.estado==='pagado'?'#006633':v.estado==='fiado'?'#cc3300':'#886600',alt:true})}
@@ -1881,8 +1892,8 @@ function renderReciboContent(v,ft){
         </div>
         <div style="padding:.3rem .8rem;border-top:1px dashed #ccd;background:#f8faff">
           ${reciboFila('Subtotal',`$${(v.sub||0).toFixed(2)}`,{muted:true})}
-          ${reciboFila(`Desc ${v.desc||0}%`,v.desc?`-$${((v.sub||0)*v.desc/100).toFixed(2)}`:'$0.00',{color:v.desc?'#cc3300':'#999',muted:true})}
-          ${reciboFila(`ITBMS ${v.itbms||0}%`,`$${(v.itbmsMonto||0).toFixed(2)}`,{muted:true})}
+          ${reciboFila(`Descuento (${v.desc||0}%)`,`-$${(((v.sub||0)*(v.desc||0))/100).toFixed(2)}`,{muted:true,color:v.desc?'#cc3300':'#999'})}
+          ${reciboFila(`ITBMS (${v.itbms||0}%)`,`$${(v.itbmsMonto||0).toFixed(2)}`,{muted:true})}
           ${reciboFila('TOTAL',`$${v.total.toFixed(2)}`,{big:true,border:true,color:'#006633'})}
           ${reciboFila('Forma de Pago',v.pago,{muted:true,alt:true})}
           ${reciboFila('Estado',v.estado.toUpperCase(),{color:v.estado==='pagado'?'#006633':v.estado==='fiado'?'#cc3300':'#886600'})}
