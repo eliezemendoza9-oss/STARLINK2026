@@ -1209,6 +1209,48 @@ function saveDB(){
   saveLocal();
   clearTimeout(cloudTimer);
   cloudTimer=setTimeout(saveCloud,1500);
+  // Verificar stock bajo después de cada guardado
+  setTimeout(checkStockBajo,200);
+}
+let _lastStockAlert=0;
+function checkStockBajo(){
+  const bajos=(DB.productos||[]).filter(p=>p.activo&&p.cat!=='internet'&&(p.stock||0)<=(p.smin||5)&&(p.stock||0)>0);
+  const agotados=(DB.productos||[]).filter(p=>p.activo&&p.cat!=='internet'&&(p.stock||0)===0);
+  if(bajos.length===0&&agotados.length===0)return;
+  // Solo mostrar alerta cada 5 minutos para no molestar
+  const ahora=Date.now();
+  if(ahora-_lastStockAlert<300000)return;
+  _lastStockAlert=ahora;
+  // Mostrar modal bonito de stock bajo
+  let html='';
+  if(agotados.length>0){
+    html+=`<div style="margin-bottom:.6rem"><div style="color:#ff4444;font-weight:800;font-size:.8rem;margin-bottom:.3rem">🚫 AGOTADOS (${agotados.length})</div>`;
+    html+=agotados.map(p=>`<div style="display:flex;justify-content:space-between;padding:.3rem .5rem;background:rgba(255,68,68,.1);border-left:3px solid #ff4444;border-radius:0 6px 6px 0;margin-bottom:.2rem;font-size:.75rem"><span>${p.nombre}</span><span style="color:#ff4444;font-weight:800">Stock: 0</span></div>`).join('');
+    html+='</div>';
+  }
+  if(bajos.length>0){
+    html+=`<div><div style="color:#ffaa00;font-weight:800;font-size:.8rem;margin-bottom:.3rem">⚠️ STOCK BAJO (${bajos.length})</div>`;
+    html+=bajos.map(p=>`<div style="display:flex;justify-content:space-between;padding:.3rem .5rem;background:rgba(255,170,0,.1);border-left:3px solid #ffaa00;border-radius:0 6px 6px 0;margin-bottom:.2rem;font-size:.75rem"><span>${p.nombre}</span><span style="color:#ffaa00;font-weight:800">Stock: ${p.stock} / Mín: ${p.smin||5}</span></div>`).join('');
+    html+='</div>';
+  }
+  // Crear modal
+  const overlay=document.createElement('div');
+  overlay.id='stock-alert-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+  overlay.innerHTML=`
+    <div style="background:linear-gradient(135deg,#0d1a2a,#1a0d2a);border:2px solid #ffaa00;border-radius:16px;padding:1.2rem;max-width:400px;width:100%;box-shadow:0 0 40px rgba(255,170,0,.3)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:#ffaa00">⚠️ ALERTA DE INVENTARIO</div>
+        <button onclick="document.getElementById('stock-alert-overlay').remove()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:6px;padding:.3rem .6rem;cursor:pointer;font-size:.9rem">✕</button>
+      </div>
+      <div style="font-size:.72rem;color:#8ab4d4;margin-bottom:.8rem">Se recomienda realizar una compra para reabastecer:</div>
+      ${html}
+      <div style="margin-top:.8rem;display:flex;gap:.5rem;justify-content:flex-end">
+        <button onclick="document.getElementById('stock-alert-overlay').remove()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:.4rem .9rem;cursor:pointer;font-size:.75rem">Cerrar</button>
+        <button onclick="document.getElementById('stock-alert-overlay').remove();navTo('compras')" style="background:linear-gradient(135deg,#ffaa00,#ff6600);color:#000;border:none;border-radius:8px;padding:.4rem .9rem;cursor:pointer;font-weight:800;font-size:.75rem">📦 Ir a Compras</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 // Verificar si el turno está vencido antes de procesar transacción
 function checkTurno(){
@@ -1886,7 +1928,7 @@ function reciboHeader(tipo){
     <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:5px;background:linear-gradient(135deg,#00ffff,#bf00ff,#ffee00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1">SERVICIOSEM</div>
     <div style="font-size:.72rem;color:#8ab4d4;margin-top:.2rem;font-weight:600;letter-spacing:1.5px">INTERNET STARLINK · SERVICIOS INTEGRALES</div>
     <div style="font-size:.65rem;color:#5a7a9a;margin-top:.15rem">Boca de Remedios, Comarca Ngäbe-Buglé · Panamá</div>
-    <div style="font-size:.62rem;color:#4a6a8a;margin-top:.08rem">Tel: — · serviciosem@mail.com</div>
+    <div style="font-size:.62rem;color:#4a6a8a;margin-top:.08rem">Tel: 6913-5486 · serviciosem3@gmail.com</div>
     <div style="margin-top:.6rem;display:inline-block;background:rgba(0,255,255,.1);border:1px solid rgba(0,255,255,.3);border-radius:20px;padding:.2rem .9rem;font-size:.68rem;font-weight:800;letter-spacing:2px;color:#00ffff">${tipo}</div>
   </div>`;
 }
@@ -1898,12 +1940,16 @@ function reciboFila(label,val,opts={}){
   </div>`;
 }
 function reciboFooter(){
-  return`<div style="background:linear-gradient(135deg,#0a0a1a,#0d1a35);border-radius:0 0 12px 12px;padding:.8rem 1rem;text-align:center;border-top:1px dashed rgba(0,255,255,.3);margin-top:.3rem">
-    <div style="font-size:.68rem;color:#5a7a9a;line-height:1.6">
-      <div style="color:#00ffff;font-weight:700;letter-spacing:1px;margin-bottom:.2rem">¡GRACIAS POR SU PREFERENCIA!</div>
-      <div>Proveedor oficial Starlink · Boca de Remedios</div>
-      <div>Tecnología que conecta comunidades</div>
-      <div style="margin-top:.3rem;font-size:.6rem;color:#3a5a7a">Este comprobante no tiene valor fiscal oficial</div>
+  return`<div style="background:linear-gradient(135deg,#0a0a1a,#0d1a35);border-radius:0 0 12px 12px;padding:1rem 1rem .9rem;text-align:center;border-top:2px dashed rgba(0,255,255,.3);margin-top:.3rem">
+    <div style="font-size:.72rem;color:#8ab4d4;line-height:1.8">
+      <div style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:.85rem;margin-bottom:.35rem">✨ ¡GRACIAS POR SU PREFERENCIA! ✨</div>
+      <div style="color:#aad4f4;font-style:italic;margin-bottom:.25rem">"Su confianza es nuestro mayor compromiso.<br>Estamos aquí para servirle siempre."</div>
+      <div style="color:#5a8aaa;font-size:.65rem;margin-bottom:.15rem">Proveedor oficial Starlink · Boca de Remedios · Panamá</div>
+      <div style="margin-top:.5rem;padding:.4rem .8rem;background:rgba(0,255,255,.07);border:1px solid rgba(0,255,255,.2);border-radius:8px;display:inline-block">
+        <div style="color:#00ffff;font-weight:800;font-size:.7rem;letter-spacing:1px">Att: La Gerencia</div>
+        <div style="color:#5a8aaa;font-size:.6rem">SERVICIOS EM — serviciosem3@gmail.com · 6913-5486</div>
+      </div>
+      <div style="margin-top:.4rem;font-size:.58rem;color:#3a5a7a">Este comprobante no tiene valor fiscal oficial</div>
     </div>
   </div>`;
 }
