@@ -1330,7 +1330,32 @@ function iniciarSesion(){
   SES={cajId:caj.id,cajNom:caj.nombre,trn,trnId:DB.nextId.trn++,ini:new Date().toISOString()};
   DB.turnos.unshift({id:SES.trnId,cajId:caj.id,cajNom:caj.nombre,trn,apertura:SES.ini,cierre:null,ventas:0,total:0,estado:'abierto'});
   saveDB();updateHdrCajero();$('lo').style.display='none';renderDash();
-  toast(`Bienvenid@ ${caj.nombre} — Turno ${trn}!`,'success');
+  // Mensaje de bienvenida con instrucciones según turno
+  const horaFin=trn==='manana'?'3:00 PM':trn==='tarde'?'10:00 PM':'10:00 PM';
+  const instrucciones=trn==='manana'
+    ?'\n📋 Tu turno es hasta las 3:00 PM\n1️⃣ Registra todas las ventas al momento\n2️⃣ Cobra y registra los pagos correctamente\n3️⃣ A las 3PM cierra sesión y haz arqueo de caja'
+    :trn==='tarde'
+    ?'\n📋 Tu turno es hasta las 10:00 PM\n1️⃣ Registra todas las ventas al momento\n2️⃣ Cobra y registra los pagos correctamente\n3️⃣ A las 10PM cierra sesión y haz arqueo de caja'
+    :'\n📋 Turno completo hasta las 10:00 PM\n1️⃣ Registra todas las ventas al momento\n2️⃣ Cobra y registra los pagos correctamente\n3️⃣ Al finalizar cierra sesión y haz arqueo de caja';
+  setTimeout(()=>alert(`👋 Bienvenid@ ${caj.nombre}!${instrucciones}`),500);
+  // Alerta automática cuando se acerque la hora de cierre de turno
+  const ahora=new Date();
+  const msHastaCierre=trn==='manana'?new Date(ahora.toDateString()+' 15:00')-ahora:new Date(ahora.toDateString()+' 22:00')-ahora;
+  if(msHastaCierre>0){
+    setTimeout(()=>{
+      if(SES.cajId){
+        const resp=confirm(`⏰ Son las ${horaFin} — Fin de turno de ${SES.cajNom}.\n\n¿Deseas extender el turno hasta las 10:00 PM?\n\nSi cancelas, no se podrán registrar más transacciones hasta cerrar sesión.`);
+        if(resp&&trn==='manana'){
+          const t=DB.turnos.find(x=>x.id===SES.trnId);
+          if(t){t.trn='completo';SES.trn='completo';}
+          saveDB();updateHdrCajero();
+          toast('✅ Turno extendido hasta las 10:00 PM','success');
+        }else if(!resp){
+          cerrarSesion();
+        }
+      }
+    },msHastaCierre);
+  }
 }
 
 function cerrarSesion(){
@@ -2751,8 +2776,19 @@ function calcDenom(){
   $('tot-monedas').textContent=fmt(totMon);
   $('tot-digital').textContent=fmt(totDig);
   $('tot-contado').textContent=fmt(total);
-  const A=calcArqueoHoy();
-  const sistema=Math.round(A.ingresoTotal*100)/100;
+  // Sistema: total efectivo acumulado en caja (todos los días)
+  // Ingresos efectivo: ventas+starlink en efectivo, préstamos recibidos
+  // Egresos efectivo: gastos, préstamos dados
+  const todasVentas=DB.ventas||[];
+  const todosSlV=DB.slVentas||[];
+  const todosGastos=DB.gastos||[];
+  const todosPrest=DB.prestamos||[];
+  const ef_ventas=todasVentas.filter(v=>v.pago==='Efectivo'&&v.estado!=='fiado').reduce((s,v)=>s+v.total,0);
+  const ef_sl=todosSlV.filter(v=>v.pago==='Efectivo').reduce((s,v)=>s+v.precio,0);
+  const ef_prestRec=todosPrest.filter(p=>p.tipo==='recibido'&&p.pago==='Efectivo').reduce((s,p)=>s+p.monto,0);
+  const ef_gastos=todosGastos.filter(g=>g.pago==='Efectivo').reduce((s,g)=>s+g.monto,0);
+  const ef_prestDad=todosPrest.filter(p=>p.tipo==='dado'&&p.pago==='Efectivo').reduce((s,p)=>s+p.monto,0);
+  const sistema=Math.round((ef_ventas+ef_sl+ef_prestRec-ef_gastos-ef_prestDad)*100)/100;
   $('tot-sistema').textContent=fmt(sistema);
   const dif=Math.round((total-sistema)*100)/100;
   const difEl=$('tot-diferencia');
@@ -3520,6 +3556,8 @@ async function loadFromCloud(force){
           const lo=document.getElementById('lo');
           if(lo)lo.style.display='none';
           updateHdrCajero();
+          renderDash();
+          toast('☁️ Sesión activa: '+SES.cajNom,'success');
         }
         if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
         toast('☁️ Datos actualizados desde la nube','success');
