@@ -1272,22 +1272,24 @@ async function saveCloud(){
   showSyncStatus('syncing');
   try{
     const ts=Date.now();
-    await fetch(GAS_URL,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'save',data:DB,ses:SES,ts:ts})
-    });
-    cloudOnline=true;
-    // Guardar timestamp con prefijo fijo para que todos los navegadores
-    // sepan que este es el timestamp de la nube — no del navegador local
-    localStorage.setItem('sem_ts',ts);
-    localStorage.setItem('sem_cloud_ts',ts);
-    showSyncStatus('ok');
-    if(cloudPending){cloudPending=false;saveCloud();}
+    const payload=encodeURIComponent(JSON.stringify({data:DB,ses:SES,ts:ts}));
+    const res=await fetch(GAS_URL+'?action=save&payload='+payload);
+    const r=await res.json();
+    if(r.ok){
+      cloudOnline=true;
+      localStorage.setItem('sem_ts',ts);
+      showSyncStatus('ok');
+      if(cloudPending){cloudPending=false;saveCloud();}
+    }else throw new Error(r.error||'Error');
   }catch(e){
-    cloudOnline=false;
-    showSyncStatus('offline');
+    try{
+      const ts2=Date.now();
+      await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify({action:'save',data:DB,ses:SES,ts:ts2})});
+      cloudOnline=true;
+      localStorage.setItem('sem_ts',ts2);
+      showSyncStatus('ok');
+    }catch(e2){cloudOnline=false;showSyncStatus('offline');}
   }
   cloudSaving=false;
 }
@@ -3681,10 +3683,7 @@ async function initSync(){
     if(r.ok&&r.data&&r.ts){
       const cloudTs=r.ts||0;
       const localTs=parseInt(localStorage.getItem('sem_ts')||0);
-      // LA NUBE SIEMPRE GANA — sin importar qué navegador o dispositivo
-      // Solo si la nube está vacía Y hay datos locales más recientes, subir local
-      if(cloudTs>=localTs||!localTs){
-        // Cargar datos de la nube
+      if(cloudTs>localTs){
         DB=r.data;
         ['cajeros','clientes','productos','proveedores','ventas','slVentas',
          'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
@@ -3692,32 +3691,28 @@ async function initSync(){
         localStorage.setItem('sem_ts',cloudTs);
         cloudOnline=true;
         showSyncStatus('ok');
-        // Restaurar sesión si hay una activa en la nube
         if(r.ses&&r.ses.cajId){
           SES=r.ses;
           localStorage.setItem('sem_ses',JSON.stringify(SES));
           setTimeout(()=>{
             const lo=document.getElementById('lo');
-            if(lo&&lo.style.display!=='none'){
-              lo.style.display='none';
-              updateHdrCajero();renderDash();
-              toast('☁️ Sesión activa: '+SES.cajNom,'success');
-            }
-          },300);
+            if(lo)lo.style.display='none';
+            updateHdrCajero();renderDash();
+            toast('☁️ Sesión restaurada: '+SES.cajNom,'success');
+          },500);
         }else{
           setTimeout(()=>{
             if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
-          },300);
+            toast('☁️ Datos sincronizados','success');
+          },500);
         }
-      }else if(localTs>cloudTs&&localTs>0){
-        // Solo caso: local más reciente que nube — subir a nube
+      }else{
         cloudOnline=true;
         showSyncStatus('ok');
-        saveCloud();
+        if(localTs>cloudTs&&localTs>0)saveCloud();
       }
     }
   }catch(e){
-    // Sin internet — usar datos locales como fallback
     cloudOnline=false;
     showSyncStatus('offline');
   }
