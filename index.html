@@ -1272,24 +1272,24 @@ async function saveCloud(){
   showSyncStatus('syncing');
   try{
     const ts=Date.now();
-    const payload=encodeURIComponent(JSON.stringify({data:DB,ses:SES,ts:ts}));
-    const res=await fetch(GAS_URL+'?action=save&payload='+payload);
+    const res=await fetch(GAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'save',data:DB,ses:SES,ts:ts})
+    });
     const r=await res.json();
     if(r.ok){
       cloudOnline=true;
       localStorage.setItem('sem_ts',ts);
       showSyncStatus('ok');
       if(cloudPending){cloudPending=false;saveCloud();}
-    }else throw new Error(r.error||'Error');
+    }else{
+      throw new Error(r.error||'Error al guardar');
+    }
   }catch(e){
-    try{
-      const ts2=Date.now();
-      await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
-        body:JSON.stringify({action:'save',data:DB,ses:SES,ts:ts2})});
-      cloudOnline=true;
-      localStorage.setItem('sem_ts',ts2);
-      showSyncStatus('ok');
-    }catch(e2){cloudOnline=false;showSyncStatus('offline');}
+    cloudOnline=false;
+    showSyncStatus('offline');
+    toast('⚠️ Sin conexión a la nube','error');
   }
   cloudSaving=false;
 }
