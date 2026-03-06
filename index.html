@@ -1272,24 +1272,19 @@ async function saveCloud(){
   showSyncStatus('syncing');
   try{
     const ts=Date.now();
-    const res=await fetch(GAS_URL,{
+    await fetch(GAS_URL,{
       method:'POST',
+      mode:'no-cors',
       headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({action:'save',data:DB,ses:SES,ts:ts})
     });
-    const r=await res.json();
-    if(r.ok){
-      cloudOnline=true;
-      localStorage.setItem('sem_ts',ts);
-      showSyncStatus('ok');
-      if(cloudPending){cloudPending=false;saveCloud();}
-    }else{
-      throw new Error(r.error||'Error al guardar');
-    }
+    cloudOnline=true;
+    localStorage.setItem('sem_ts',ts);
+    showSyncStatus('ok');
+    if(cloudPending){cloudPending=false;saveCloud();}
   }catch(e){
     cloudOnline=false;
     showSyncStatus('offline');
-    toast('⚠️ Sin conexión a la nube','error');
   }
   cloudSaving=false;
 }
@@ -3676,46 +3671,54 @@ async function loadFromCloud(force){
 }
 
 // Al iniciar: cargar desde nube automáticamente
-async function initSync(){
-  try{
-    const res=await fetch(GAS_URL+'?action=load');
-    const r=JSON.parse(await res.text());
-    if(r.ok&&r.data&&r.ts){
-      const cloudTs=r.ts||0;
-      const localTs=parseInt(localStorage.getItem('sem_ts')||0);
-      if(cloudTs>localTs){
-        DB=r.data;
-        ['cajeros','clientes','productos','proveedores','ventas','slVentas',
-         'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
-        saveLocal();
-        localStorage.setItem('sem_ts',cloudTs);
-        cloudOnline=true;
-        showSyncStatus('ok');
-        if(r.ses&&r.ses.cajId){
-          SES=r.ses;
-          localStorage.setItem('sem_ses',JSON.stringify(SES));
-          setTimeout(()=>{
-            const lo=document.getElementById('lo');
-            if(lo)lo.style.display='none';
-            updateHdrCajero();renderDash();
-            toast('☁️ Sesión restaurada: '+SES.cajNom,'success');
-          },500);
-        }else{
-          setTimeout(()=>{
-            if(document.getElementById('pg-dashboard')?.classList.contains('act'))renderDash();
-            toast('☁️ Datos sincronizados','success');
-          },500);
+function initSync(){
+  // Usar JSONP igual que MEDUCA — funciona sin CORS
+  return new Promise(function(resolve){
+    const old=document.getElementById('_semJsonp');
+    if(old)old.remove();
+    const timer=setTimeout(function(){
+      const s=document.getElementById('_semJsonp');
+      if(s)s.remove();
+      cloudOnline=false;
+      showSyncStatus('offline');
+      resolve();
+    },8000);
+    window._semCallback=function(r){
+      clearTimeout(timer);
+      const s=document.getElementById('_semJsonp');
+      if(s)s.remove();
+      try{
+        if(r.ok&&r.data&&r.ts){
+          const cloudTs=r.ts||0;
+          const localTs=parseInt(localStorage.getItem('sem_ts')||0);
+          if(cloudTs>=localTs){
+            DB=r.data;
+            ['cajeros','clientes','productos','proveedores','ventas','slVentas',
+             'gastos','prestamos','ajustesInv','turnos','conteos','compras'].forEach(k=>{if(!DB[k])DB[k]=[];});
+            saveLocal();
+            localStorage.setItem('sem_ts',cloudTs);
+          }
+          if(r.ses&&r.ses.cajId){
+            SES=r.ses;
+            localStorage.setItem('sem_ses',JSON.stringify(SES));
+          }
+          cloudOnline=true;
+          showSyncStatus('ok');
         }
-      }else{
-        cloudOnline=true;
-        showSyncStatus('ok');
-        if(localTs>cloudTs&&localTs>0)saveCloud();
-      }
-    }
-  }catch(e){
-    cloudOnline=false;
-    showSyncStatus('offline');
-  }
+      }catch(e){}
+      resolve();
+    };
+    const script=document.createElement('script');
+    script.id='_semJsonp';
+    script.src=GAS_URL+'?action=load&callback=_semCallback&t='+Date.now();
+    script.onerror=function(){
+      clearTimeout(timer);
+      cloudOnline=false;
+      showSyncStatus('offline');
+      resolve();
+    };
+    document.head.appendChild(script);
+  });
 }
 // ═══════════════════════════════════════════════════════════
 // INIT
