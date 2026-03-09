@@ -1555,7 +1555,8 @@ function calcArqueoHoy(){
     +slH.filter(v=>v.pago==='Transferencia').reduce((s,v)=>s+v.precio,0);
   // Compras del día como egreso (ej: factura Starlink)
   const compH=DB.compras.filter(c=>new Date(c.fecha).toDateString()===h);
-  const egCompras=compH.filter(c=>c.afectaCaja===true).reduce((s,c)=>s+(c.pagado||0),0);
+  // Restar: compras marcadas como 'afecta caja' O compras de proveedor Starlink
+  const egCompras=compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).reduce((s,c)=>s+(c.pagado||0),0);
   const ingresoTotal=ingVentas+ingSL+ingPres;
   const egresoTotal=egGastos+egPres+egCompras;
   return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
@@ -3797,13 +3798,19 @@ function initApp(){
   if(SES&&SES.cajId){
     updateHdrCajero();
     renderDash();
-    // Verificar si el turno activo ya venció
+    // Verificar si el turno activo ya venció — solo si es turno DE HOY
     const ahoraH=new Date().getHours();
     const trnAct=SES.trn||'';
-    if((trnAct==='manana'&&ahoraH>=15)||(trnAct==='tarde'&&ahoraH>=22)||(trnAct==='completo'&&ahoraH>=22)){
+    const trnObj=DB.turnos&&DB.turnos.find(t=>t.id===SES.trnId);
+    const trnHoy=trnObj&&new Date(trnObj.apertura).toDateString()===new Date().toDateString();
+    if(trnHoy&&(trnAct==='manana'&&ahoraH>=15)){
+      setTimeout(()=>activarBloqueoTurno(trnAct),1000);
+    }else if(trnHoy&&((trnAct==='tarde'||trnAct==='completo')&&ahoraH>=22)){
       setTimeout(()=>activarBloqueoTurno(trnAct),1000);
     }else{
-      programarAlertaCierre(trnAct);
+      // Turno de otro día o aún vigente — solo programar alerta si es hoy
+      if(trnHoy) programarAlertaCierre(trnAct);
+      // Si es de otro día, no bloquear — dejar vender normalmente
     }
   }else{
     // Verificar si quedó un turno abierto sin cerrar
