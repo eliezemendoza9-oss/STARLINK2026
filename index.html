@@ -461,6 +461,31 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
     </div>
   </div>
 
+  <!-- TABLA DE EGRESOS DEL DÍA -->
+  <div class="card" style="border-color:var(--red);border-width:2px;margin-bottom:.75rem">
+    <div class="ct" style="color:var(--red);margin-bottom:.75rem">📤 DETALLE DE EGRESOS DEL DÍA</div>
+    <div id="tabla-egresos-wrap">
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+        <thead>
+          <tr style="background:#1a0a0a;color:var(--red)">
+            <th style="padding:.4rem .6rem;text-align:left">Tipo</th>
+            <th style="padding:.4rem .6rem;text-align:left">Descripción</th>
+            <th style="padding:.4rem .6rem;text-align:left">Categoría</th>
+            <th style="padding:.4rem .6rem;text-align:left">Hora</th>
+            <th style="padding:.4rem .6rem;text-align:right">Monto</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-egresos-body">
+          <tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--muted)">Sin egresos hoy</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end;margin-top:.5rem;font-weight:800;font-size:.9rem">
+        <span style="color:var(--muted);margin-right:1rem">TOTAL EGRESOS:</span>
+        <span id="tabla-egresos-total" style="color:var(--red)">$0.00</span>
+      </div>
+    </div>
+  </div>
+
   <!-- CONTEO DE EFECTIVO POR DENOMINACIONES -->
   <div class="card" style="border-color:var(--accent3);border-width:2px">
     <div class="ct" style="color:var(--accent3)">💵 CONTEO DE CAJA — DENOMINACIONES PANAMEÑAS</div>
@@ -1588,6 +1613,31 @@ function renderCaja(){
     <div class="flow-row"><div class="flow-icon">📋</div><div class="flow-info"><div class="flow-nm">Fiados</div><div class="flow-dt">Por cobrar</div></div><div class="flow-amt" style="color:var(--accent3)">${fmt(A.ingFiado)}</div></div>`;
   $('arq-neto').textContent=fmt(A.neto);
   $('arq-neto').style.color=A.neto>=0?'var(--green)':'var(--red)';
+
+  // Tabla de egresos — gastos + compras de caja
+  const egRows=[];
+  A.gasH.forEach(g=>{
+    egRows.push({tipo:'Gasto',desc:g.desc,cat:g.cat||'—',hora:new Date(g.fecha).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),monto:g.monto});
+  });
+  A.compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).forEach(c=>{
+    egRows.push({tipo:'Compra/Factura',desc:c.provNom||'Sin proveedor',cat:(c.items||[]).map(i=>i.nom).join(', ')||'—',hora:new Date(c.fecha).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),monto:c.pagado||0});
+  });
+  egRows.sort((a,b)=>a.hora.localeCompare(b.hora));
+  const tbEg=$('tabla-egresos-body');
+  if(tbEg){
+    tbEg.innerHTML=egRows.length?egRows.map(r=>`
+      <tr style="border-bottom:1px solid rgba(255,71,87,.15)">
+        <td style="padding:.35rem .6rem"><span style="background:${r.tipo==='Gasto'?'rgba(255,71,87,.2)':'rgba(255,140,0,.2)'};color:${r.tipo==='Gasto'?'var(--red)':'var(--orange)'};padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:700">${r.tipo}</span></td>
+        <td style="padding:.35rem .6rem;font-weight:600">${r.desc}</td>
+        <td style="padding:.35rem .6rem;color:var(--muted)">${r.cat}</td>
+        <td style="padding:.35rem .6rem;color:var(--muted)">${r.hora}</td>
+        <td style="padding:.35rem .6rem;text-align:right;color:var(--red);font-weight:700">-${fmt(r.monto)}</td>
+      </tr>`).join('')
+      :'<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--muted)">Sin egresos hoy</td></tr>';
+    const totalEg=egRows.reduce((s,r)=>s+r.monto,0);
+    const telEl=$('tabla-egresos-total');
+    if(telEl)telEl.textContent=fmt(totalEg);
+  }
 
   // Turnos del día
   const h=hoyStr();
@@ -3195,6 +3245,13 @@ function guardarCompra(){
     notas:$('cmp-notas').value,
     cajId:SES.cajId,cajNom:SES.cajNom
   };
+  // Preguntar ANTES de guardar si es egreso de caja
+  if(est==='pagado'){
+    const deCaja=confirm('📤 EGRESO DE CAJA\n\n¿Esta compra/factura de '+fmt(total)+' se pagó con el dinero generado en ventas?\n\n✅ SÍ = se registra como egreso y se resta del dinero disponible\n❌ NO = se registra solo en compras sin afectar la caja');
+    cmp.afectaCaja=deCaja;
+  }else{
+    cmp.afectaCaja=false; // pendiente de pago — no afecta caja aún
+  }
   if(!DB.compras)DB.compras=[];
   DB.compras.unshift(cmp);
   // Update stock
@@ -3202,12 +3259,6 @@ function guardarCompra(){
     const p=DB.productos.find(x=>x.id===it.pid);
     if(p){p.stock+=it.qty;p.costo=it.pu;}
   });
-  // Preguntar si esta compra se pagó con dinero de la caja
-  if(est==='pagado'){
-    const deCaja=confirm('💰 ¿Esta compra de '+fmt(total)+' se pagó con dinero de la caja?\n\nSí = se resta de las ganancias del día\nNo = se pagó con otro dinero (no afecta la caja)');
-    cmp.afectaCaja=deCaja;
-    DB.compras[0]=cmp;
-  }
   saveDB();toast('Compra '+cmp.codigo+' — '+fmt(total)+' registrada!','success');
   closeMod('mo-compra');citems=[];
   renderProds();renderComprasProds();renderDash();
