@@ -1327,7 +1327,7 @@ function showSyncStatus(st){
 const $=id=>document.getElementById(id);
 const fmt=n=>isNaN(n)?'$0.00':'$'+(parseFloat(n)||0).toFixed(2);
 const hoy=()=>new Date().toISOString().split('T')[0];
-const hoyStr=()=>new Date().toDateString();
+const hoyStr=()=>nowPA().toDateString();
 const nowStr=()=>new Date().toLocaleString('es-ES',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 function pad(n,l=3){return String(n).padStart(l,'0');}
 const catL={internet:'🌐 Internet',servicio:'🔧 Servicio',producto:'📦 Producto',otro:'📌 Otro'};
@@ -1336,8 +1336,12 @@ const trnL={manana:'🌅 Mañana',tarde:'🌇 Tarde',completo:'🌐 Completo'};
 const estBadge={pagado:'bg-g',pendiente:'bg-y',fiado:'bg-r',parcial:'bg-o'};
 
 // CLOCK
+function nowPA(){
+  // Siempre hora de Panamá UTC-5 sin importar el navegador
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Panama'}));
+}
 function tick(){
-  const n=new Date();
+  const n=nowPA();
   $('clk').textContent=n.toLocaleTimeString('es-ES');
   $('clk-d').textContent=n.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit',month:'short'});
 }
@@ -1426,7 +1430,7 @@ function programarAlertaCierre(trn){
   const ms=cierre-ahora;
   if(ms<=0){
     // Solo bloquear si realmente pasó la hora HOY
-    const ahoraH=new Date().getHours();
+    const ahoraH=nowPA().getHours();
     const bloqueado=(trn==='manana'&&ahoraH>=15)||(trn==='tarde'&&ahoraH>=22)||((trn==='completo'||trn==='')&&ahoraH>=22);
     if(bloqueado){
       activarBloqueoTurno(trn);
@@ -1479,7 +1483,7 @@ function cerrarSesion(){
   $('hdr-trn').style.display='none';$('hdr-trn-ind').style.display='none';
   // Reconstruir grids y mostrar login
   buildLoginGrids();
-  const h_=new Date().getHours();
+  const h_=nowPA().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   $('lo').style.display='flex';
   toast('Sesión cerrada','info');
@@ -1537,7 +1541,7 @@ function confirmarCierre(){
 }
 
 function calcArqueoHoy(){
-  const h=hoyStr();
+  const h=nowPA().toDateString();
   const venH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===h);
   const slH=DB.slVentas.filter(v=>new Date(v.fecha+'T00:00').toDateString()===h);
   const gasH=DB.gastos.filter(g=>new Date(g.fecha).toDateString()===h);
@@ -2537,11 +2541,13 @@ function renderDash(){
     <div class="sc-l">${lbl}</div>${sub?`<div class="sc-s">${sub}</div>`:''}
     ${page?'<div style="font-size:.6rem;color:var(--muted);margin-top:.25rem;letter-spacing:.5px">VER →</div>':''}
   </div>`;
+  const dineroDisp=A.efectivo-A.egCompras;
   $('sg-dash').innerHTML=
     sc('💰',fmt(A.neto),'Neto del Día',`Ing:${fmt(A.ingresoTotal)} Eg:${fmt(A.egresoTotal)}`,A.neto>=0?'var(--green)':'var(--red)','caja')+
     sc('🧾',A.nVentas,'Trans. Hoy',`${A.venH.length} ventas + ${A.slH.length} SL`,null,'ventas')+
     sc('🛰️',A.slH.length,'Starlink Hoy',`${fmt(A.ingSL)} recaudado`,'var(--accent)','starlink')+
-    sc('💵',fmt(A.efectivo),'Efectivo','En caja','var(--accent)','caja')+
+    sc('💵',fmt(A.efectivo),'Efectivo Recaudado','Total cobrado hoy','var(--accent)','caja')+
+    sc('💰',fmt(dineroDisp),'Dinero Disponible',`Efectivo - Compras caja`,dineroDisp>=0?'var(--green)':'var(--red)','caja')+
     sc('📤',fmt(A.egresoTotal),'Egresos Hoy',null,'var(--red)','gastos')+
     sc('💸',fmt(presPend),'Por Cobrar',`Préstamos activos`,'var(--orange)','prestamos')+
     sc('⚠️',stockBajo,'Stock Bajo',stockBajo>0?'Revisar productos':'Todo OK',stockBajo>0?'var(--red)':'var(--green)','inventario')+
@@ -3376,7 +3382,7 @@ function toggleAI(){
   if(aiOpen){
     p.classList.add('open');
     if(aiHistory.length===0){
-      const h=new Date().getHours();
+      const h=nowPA().getHours();
       const sal=h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches';
       addAIMsg('bot',`¡${sal}! Soy el asistente IA de SERVICIOSEM 🤖\n\nConozco todos los datos de tu negocio en tiempo real. ¿En qué te ayudo?`);
     }
@@ -3792,17 +3798,17 @@ loadDB();
 function initApp(){
   buildLoginGrids();
   initSync(); // Cargar datos desde nube al iniciar
-  const h_=new Date().getHours();
+  const h_=nowPA().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if($('cc-trn'))$('cc-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if(SES&&SES.cajId){
     updateHdrCajero();
     renderDash();
     // Verificar si el turno activo ya venció — solo si es turno DE HOY
-    const ahoraH=new Date().getHours();
+    const ahoraH=nowPA().getHours();
     const trnAct=SES.trn||'';
     const trnObj=DB.turnos&&DB.turnos.find(t=>t.id===SES.trnId);
-    const trnHoy=trnObj&&new Date(trnObj.apertura).toDateString()===new Date().toDateString();
+    const trnHoy=trnObj&&new Date(trnObj.apertura).toDateString()===nowPA().toDateString();
     if(trnHoy&&(trnAct==='manana'&&ahoraH>=15)){
       setTimeout(()=>activarBloqueoTurno(trnAct),1000);
     }else if(trnHoy&&((trnAct==='tarde'||trnAct==='completo')&&ahoraH>=22)){
