@@ -1425,8 +1425,13 @@ function programarAlertaCierre(trn){
   cierre.setHours(hCierre,0,0,0);
   const ms=cierre-ahora;
   if(ms<=0){
-    // Ya pasó la hora — bloquear inmediatamente
-    activarBloqueoTurno(trn);
+    // Solo bloquear si realmente pasó la hora HOY
+    const ahoraH=new Date().getHours();
+    const bloqueado=(trn==='manana'&&ahoraH>=15)||(trn==='tarde'&&ahoraH>=22)||((trn==='completo'||trn==='')&&ahoraH>=22);
+    if(bloqueado){
+      activarBloqueoTurno(trn);
+    }
+    // Si no pasó la hora, no hacer nada (turno válido)
     return;
   }
   setTimeout(()=>{
@@ -1550,7 +1555,7 @@ function calcArqueoHoy(){
     +slH.filter(v=>v.pago==='Transferencia').reduce((s,v)=>s+v.precio,0);
   // Compras del día como egreso (ej: factura Starlink)
   const compH=DB.compras.filter(c=>new Date(c.fecha).toDateString()===h);
-  const egCompras=compH.filter(c=>c.afectaCaja!==false).reduce((s,c)=>s+(c.pagado||0),0);
+  const egCompras=compH.filter(c=>c.afectaCaja===true).reduce((s,c)=>s+(c.pagado||0),0);
   const ingresoTotal=ingVentas+ingSL+ingPres;
   const egresoTotal=egGastos+egPres+egCompras;
   return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
@@ -2366,8 +2371,20 @@ function openModCli(id){
 }
 function guardarCli(){
   const eid=$('cl-eid').value;const nom=$('cl-nom').value.trim();if(!nom){toast('Ingresa nombre','error');return;}
+  // Si es cliente NUEVO, verificar duplicado
+  if(!eid){
+    const existe=DB.clientes.find(c=>c.nombre.toLowerCase()===nom.toLowerCase());
+    if(existe){
+      const esMismo=confirm('⚠️ Ya existe un cliente llamado "'+existe.nombre+'"\n\n¿Es el mismo cliente?\n\nSí = cancelar y usar el existente\nNo = crear nuevo con número diferenciador');
+      if(esMismo){toast('Usa el cliente existente: '+existe.nombre,'info');return;}
+      // Crear con diferenciador
+      const iguales=DB.clientes.filter(c=>c.nombre.toLowerCase()===nom.toLowerCase()).length;
+      $('cl-nom').value=nom+' ('+(iguales+1)+')';
+    }
+  }
+  const nomFinal=$('cl-nom').value.trim();
   const base=eid?DB.clientes.find(c=>c.id===parseInt(eid)):{};
-  const obj={id:eid?parseInt(eid):DB.nextId.cli++,codigo:$('cl-cod').value,nombre:nom,
+  const obj={id:eid?parseInt(eid):DB.nextId.cli++,codigo:$('cl-cod').value,nombre:nomFinal,
     tel:$('cl-tel').value,email:$('cl-em').value,dir:$('cl-dir').value,notas:$('cl-nt').value,
     totalGastado:base.totalGastado||0,compras:base.compras||0,fiado:base.fiado||0};
   if(eid){const i=DB.clientes.findIndex(c=>c.id===parseInt(eid));if(i>=0)DB.clientes[i]=obj;}
