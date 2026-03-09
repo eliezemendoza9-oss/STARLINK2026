@@ -1562,8 +1562,9 @@ function calcArqueoHoy(){
   // Restar: compras marcadas como 'afecta caja' O compras de proveedor Starlink
   const egCompras=compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).reduce((s,c)=>s+(c.pagado||0),0);
   const ingresoTotal=ingVentas+ingSL+ingPres;
-  const egresoTotal=egGastos+egPres; // compras NO afectan el neto del día
-  return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
+  const egresoTotal=egGastos+egPres+egCompras; // incluye compras de caja para mostrar total egresos
+  const netoVentas=ingVentas+ingSL-egGastos-egPres; // neto puro de ventas sin compras
+  return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,netoVentas,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
 }
 
 function renderCaja(){
@@ -1583,7 +1584,7 @@ function renderCaja(){
   $('arq-egresos').innerHTML=`
     <div class="flow-row"><div class="flow-icon">📤</div><div class="flow-info"><div class="flow-nm">Gastos</div><div class="flow-dt">${A.gasH.length} registros</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egGastos)}</div></div>
     <div class="flow-row"><div class="flow-icon">💳</div><div class="flow-info"><div class="flow-nm">Préstamos Dados</div><div class="flow-dt">Salidas de capital</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egPres)}</div></div>
-    <div class="flow-row"><div class="flow-icon">📦</div><div class="flow-info"><div class="flow-nm">Compras / Facturas</div><div class="flow-dt">${A.compH.length} pagos (ej: Starlink)</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egCompras)}</div></div>
+    ${A.egCompras>0?`<div class="flow-row"><div class="flow-icon">📦</div><div class="flow-info"><div class="flow-nm">Compras pagadas de caja</div><div class="flow-dt">${A.compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).length} facturas (Starlink, insumos, etc.)</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egCompras)}</div></div>`:''}
     <div class="flow-row"><div class="flow-icon">📋</div><div class="flow-info"><div class="flow-nm">Fiados</div><div class="flow-dt">Por cobrar</div></div><div class="flow-amt" style="color:var(--accent3)">${fmt(A.ingFiado)}</div></div>`;
   $('arq-neto').textContent=fmt(A.neto);
   $('arq-neto').style.color=A.neto>=0?'var(--green)':'var(--red)';
@@ -2543,12 +2544,12 @@ function renderDash(){
   </div>`;
   const dineroDisp=A.efectivo-A.egCompras;
   $('sg-dash').innerHTML=
-    sc('💰',fmt(A.neto),'Neto del Día',`Ing:${fmt(A.ingresoTotal)} Eg:${fmt(A.egresoTotal)}`,A.neto>=0?'var(--green)':'var(--red)','caja')+
+    sc('💰',fmt(A.netoVentas),'Neto del Día',`Ing:${fmt(A.ingresoTotal)} Eg:${fmt(A.egresoTotal)}`,A.netoVentas>=0?'var(--green)':'var(--red)','caja')+
     sc('🧾',A.nVentas,'Trans. Hoy',`${A.venH.length} ventas + ${A.slH.length} SL`,null,'ventas')+
     sc('🛰️',A.slH.length,'Starlink Hoy',`${fmt(A.ingSL)} recaudado`,'var(--accent)','starlink')+
     sc('💵',fmt(A.efectivo),'Efectivo en Caja','Total cobrado hoy','var(--accent)','caja')+
     sc('💰',fmt(dineroDisp),'Dinero Disponible','Efectivo - Facturas pagadas',dineroDisp>=0?'var(--green)':'var(--red)','caja')+
-    sc('📤',fmt(A.egresoTotal),'Egresos Hoy',null,'var(--red)','gastos')+
+    sc('📤',fmt(A.egresoTotal),'Egresos Hoy',`Gastos+Compras caja`,'var(--red)','gastos')+
     sc('💸',fmt(presPend),'Por Cobrar',`Préstamos activos`,'var(--orange)','prestamos')+
     sc('⚠️',stockBajo,'Stock Bajo',stockBajo>0?'Revisar productos':'Todo OK',stockBajo>0?'var(--red)':'var(--green)','inventario')+
     sc('👥',DB.clientes.length,'Clientes',null,null,'clientes');
