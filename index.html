@@ -1562,7 +1562,7 @@ function calcArqueoHoy(){
   // Restar: compras marcadas como 'afecta caja' O compras de proveedor Starlink
   const egCompras=compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).reduce((s,c)=>s+(c.pagado||0),0);
   const ingresoTotal=ingVentas+ingSL+ingPres;
-  const egresoTotal=egGastos+egPres+egCompras;
+  const egresoTotal=egGastos+egPres; // compras NO afectan el neto del día
   return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
 }
 
@@ -1702,7 +1702,7 @@ const dlCli=$('v-cli-list');
 if(dlCli)dlCli.innerHTML=DB.clientes.map(c=>`<option data-id="${c.id}" value="${c.nombre}${c.fiado>0?' — FIADO:$'+c.fiado.toFixed(2):''}">`).join('');
 $('v-cli-txt').value='';
 $('v-cli-id').value='';
-  $('v-cli').onchange=function(){const c=DB.clientes.find(x=>x.id===parseInt(this.value));const row=$('v-saldo-cli-row');const inp=$('v-saldo-cli');if(c&&c.fiado>0&&row&&inp){row.style.display='';inp.value='$'+c.fiado.toFixed(2)+' pendiente';}else if(row){row.style.display='';}}
+  // v-cli removido — ahora se usa v-cli-txt con vFiltrarCli
   $('v-psel').innerHTML='<option value="">-- Seleccionar producto --</option>'+DB.productos.filter(p=>p.activo).map(p=>`<option value="${p.id}" data-p="${p.pvta}" data-u="${p.und}">[${p.codigo}] ${p.nombre} — ${fmt(p.pvta)}/${undL[p.und]||p.und}</option>`).join('');
   $('v-folio').value='VTA-'+pad(DB.nextId.vta,5);
   $('v-fhora').value=nowStr();
@@ -2546,8 +2546,8 @@ function renderDash(){
     sc('💰',fmt(A.neto),'Neto del Día',`Ing:${fmt(A.ingresoTotal)} Eg:${fmt(A.egresoTotal)}`,A.neto>=0?'var(--green)':'var(--red)','caja')+
     sc('🧾',A.nVentas,'Trans. Hoy',`${A.venH.length} ventas + ${A.slH.length} SL`,null,'ventas')+
     sc('🛰️',A.slH.length,'Starlink Hoy',`${fmt(A.ingSL)} recaudado`,'var(--accent)','starlink')+
-    sc('💵',fmt(A.efectivo),'Efectivo Recaudado','Total cobrado hoy','var(--accent)','caja')+
-    sc('💰',fmt(dineroDisp),'Dinero Disponible',`Efectivo - Compras caja`,dineroDisp>=0?'var(--green)':'var(--red)','caja')+
+    sc('💵',fmt(A.efectivo),'Efectivo en Caja','Total cobrado hoy','var(--accent)','caja')+
+    sc('💰',fmt(dineroDisp),'Dinero Disponible','Efectivo - Facturas pagadas',dineroDisp>=0?'var(--green)':'var(--red)','caja')+
     sc('📤',fmt(A.egresoTotal),'Egresos Hoy',null,'var(--red)','gastos')+
     sc('💸',fmt(presPend),'Por Cobrar',`Préstamos activos`,'var(--orange)','prestamos')+
     sc('⚠️',stockBajo,'Stock Bajo',stockBajo>0?'Revisar productos':'Todo OK',stockBajo>0?'var(--red)':'var(--green)','inventario')+
