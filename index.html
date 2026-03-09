@@ -883,8 +883,13 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
     <div class="fg" style="margin-bottom:.75rem">
       <div class="fgr"><label>Folio</label><input id="v-folio" readonly style="color:var(--accent3);font-weight:800;"></div>
       <div class="fgr"><label>Fecha/Hora</label><input id="v-fhora" readonly></div>
-      <div class="fgr"><label>Cliente</label><select id="v-cli"><option value="">-- Cliente --</option></select></div>
-      <div class="fgr"><label>O nombre nuevo</label><input id="v-clin" placeholder="Nuevo cliente"></div>
+      <div class="fgr"><label>Cliente</label>
+        <input id="v-cli-txt" list="v-cli-list" placeholder="Buscar cliente..." autocomplete="off"
+          oninput="vFiltrarCli(this.value)" style="width:100%">
+        <datalist id="v-cli-list"></datalist>
+        <input type="hidden" id="v-cli-id">
+      </div>
+      <div class="fgr"><label>O nombre nuevo</label><input id="v-clin" placeholder="Nuevo cliente (si no existe)"></div>
       <div class="fgr"><label>Método Pago</label><select id="v-pago" onchange="vCheckPago()"><option>Efectivo</option><option>Yappy</option><option>Transferencia</option><option>Tarjeta</option><option value="credito">📋 Crédito/Cuotas</option><option>Cheque</option><option>Otro</option></select></div>
       <div class="fgr"><label>Estado</label><select id="v-est"><option value="pagado">✅ Pagado al contado</option><option value="credito">💳 Crédito / Cuotas</option><option value="fiado">📋 Fiado</option><option value="pendiente">⏳ Pendiente</option></select></div>
       <div class="fgr" id="v-cuotas-row" style="display:none"><label>N° Cuotas</label><input type="number" id="v-cuotas" value="1" min="1" max="36" placeholder="Ej: 3"></div>
@@ -1543,9 +1548,12 @@ function calcArqueoHoy(){
     +slH.filter(v=>v.pago==='Efectivo').reduce((s,v)=>s+v.precio,0);
   const transfer=venH.filter(v=>v.pago==='Transferencia'&&v.estado!=='fiado').reduce((s,v)=>s+v.total,0)
     +slH.filter(v=>v.pago==='Transferencia').reduce((s,v)=>s+v.precio,0);
+  // Compras del día como egreso (ej: factura Starlink)
+  const compH=DB.compras.filter(c=>new Date(c.fecha).toDateString()===h);
+  const egCompras=compH.filter(c=>c.afectaCaja!==false).reduce((s,c)=>s+(c.pagado||0),0);
   const ingresoTotal=ingVentas+ingSL+ingPres;
-  const egresoTotal=egGastos+egPres;
-  return{venH,slH,gasH,ingVentas,ingSL,ingPres,egGastos,egPres,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
+  const egresoTotal=egGastos+egPres+egCompras;
+  return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
 }
 
 function renderCaja(){
@@ -1565,6 +1573,7 @@ function renderCaja(){
   $('arq-egresos').innerHTML=`
     <div class="flow-row"><div class="flow-icon">📤</div><div class="flow-info"><div class="flow-nm">Gastos</div><div class="flow-dt">${A.gasH.length} registros</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egGastos)}</div></div>
     <div class="flow-row"><div class="flow-icon">💳</div><div class="flow-info"><div class="flow-nm">Préstamos Dados</div><div class="flow-dt">Salidas de capital</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egPres)}</div></div>
+    <div class="flow-row"><div class="flow-icon">📦</div><div class="flow-info"><div class="flow-nm">Compras / Facturas</div><div class="flow-dt">${A.compH.length} pagos (ej: Starlink)</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egCompras)}</div></div>
     <div class="flow-row"><div class="flow-icon">📋</div><div class="flow-info"><div class="flow-nm">Fiados</div><div class="flow-dt">Por cobrar</div></div><div class="flow-amt" style="color:var(--accent3)">${fmt(A.ingFiado)}</div></div>`;
   $('arq-neto').textContent=fmt(A.neto);
   $('arq-neto').style.color=A.neto>=0?'var(--green)':'var(--red)';
@@ -1678,7 +1687,11 @@ function delSL(id){if(!confirm('¿Eliminar?'))return;DB.slVentas=DB.slVentas.fil
 function openModVenta(){
   vitems=[];
   // populate selects
-  $('v-cli').innerHTML='<option value="">-- Cliente --</option>'+DB.clientes.map(c=>`<option value="${c.id}">${c.nombre}${c.fiado>0?' — FIADO:$'+c.fiado.toFixed(2):''}</option>`).join('');
+  // Llenar datalist para búsqueda dinámica
+const dlCli=$('v-cli-list');
+if(dlCli)dlCli.innerHTML=DB.clientes.map(c=>`<option data-id="${c.id}" value="${c.nombre}${c.fiado>0?' — FIADO:$'+c.fiado.toFixed(2):''}">`).join('');
+$('v-cli-txt').value='';
+$('v-cli-id').value='';
   $('v-cli').onchange=function(){const c=DB.clientes.find(x=>x.id===parseInt(this.value));const row=$('v-saldo-cli-row');const inp=$('v-saldo-cli');if(c&&c.fiado>0&&row&&inp){row.style.display='';inp.value='$'+c.fiado.toFixed(2)+' pendiente';}else if(row){row.style.display='';}}
   $('v-psel').innerHTML='<option value="">-- Seleccionar producto --</option>'+DB.productos.filter(p=>p.activo).map(p=>`<option value="${p.id}" data-p="${p.pvta}" data-u="${p.und}">[${p.codigo}] ${p.nombre} — ${fmt(p.pvta)}/${undL[p.und]||p.und}</option>`).join('');
   $('v-folio').value='VTA-'+pad(DB.nextId.vta,5);
@@ -1692,6 +1705,22 @@ function vCheckPago(){
   if(pago==='credito'){$('v-est').value='credito';}
   const cuotasRow=$('v-cuotas-row');
   if(cuotasRow)cuotasRow.style.display=(pago==='credito'||$('v-est').value==='credito')?'':'none';
+}
+function vFiltrarCli(val){
+  // Buscar si el texto coincide exactamente con un cliente
+  const v=val.toLowerCase().replace(/ — FIADO.*/,'').trim();
+  const cli=DB.clientes.find(c=>c.nombre.toLowerCase()===v);
+  if(cli){
+    $('v-cli-id').value=cli.id;
+    $('v-clin').value='';
+    // Mostrar fiado si tiene
+    const row=$('v-saldo-cli-row');
+    const inp=$('v-saldo-cli');
+    if(cli.fiado>0&&row&&inp){row.style.display='';inp.value='$'+cli.fiado.toFixed(2);}
+    else if(row)row.style.display='none';
+  }else{
+    $('v-cli-id').value='';
+  }
 }
 function vAutoFill(){
   const sel=$('v-psel');const opt=sel.options[sel.selectedIndex];
@@ -1767,10 +1796,18 @@ function vCalcTotal(){
 function guardarVenta(){
   if(!checkTurno())return;
   if(vitems.length===0){toast('Agrega al menos un producto','error');return;}
-  const cliId=parseInt($('v-cli').value)||null;const nnom=$('v-clin').value.trim();
+  const cliId=parseInt($('v-cli-id')?.value)||parseInt($('v-cli')?.value)||null;
+  const nnom=$('v-clin').value.trim();
   let cliNom='General',cliIdF=cliId;
-  if(nnom&&!cliId){const nc={id:DB.nextId.cli++,codigo:'CLI-'+pad(DB.nextId.cli),nombre:nnom,tel:'',email:'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0};DB.clientes.push(nc);cliIdF=nc.id;cliNom=nc.nombre;}
-  else if(cliId){cliNom=DB.clientes.find(c=>c.id===cliId)?.nombre||'?';}
+  if(nnom&&!cliId){
+    // Verificar si ya existe un cliente con ese nombre
+    const existe=DB.clientes.find(c=>c.nombre.toLowerCase()===nnom.toLowerCase());
+    if(existe){
+      const esMismo=confirm('⚠️ Ya existe un cliente llamado "'+existe.nombre+'"\n\n¿Es el mismo cliente?\n\nSí = usar el existente\nNo = crear nuevo con número diferenciador');
+      if(esMismo){cliIdF=existe.id;cliNom=existe.nombre;}
+      else{const nc={id:DB.nextId.cli++,codigo:'CLI-'+pad(DB.nextId.cli),nombre:nnom+' ('+(DB.clientes.filter(c=>c.nombre.toLowerCase()===nnom.toLowerCase()).length+1)+')',tel:'',email:'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0};DB.clientes.push(nc);cliIdF=nc.id;cliNom=nc.nombre;}
+    }else{const nc={id:DB.nextId.cli++,codigo:'CLI-'+pad(DB.nextId.cli),nombre:nnom,tel:'',email:'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0};DB.clientes.push(nc);cliIdF=nc.id;cliNom=nc.nombre;}
+  }else if(cliId){cliNom=DB.clientes.find(c=>c.id===cliId)?.nombre||'?';}
   const sub=vitems.reduce((s,i)=>s+i.sub,0);
   const desc=parseFloat($('v-desc').value)||0;
   const subtDesc=sub*(1-desc/100);
@@ -3140,8 +3177,13 @@ function guardarCompra(){
     const p=DB.productos.find(x=>x.id===it.pid);
     if(p){p.stock+=it.qty;p.costo=it.pu;}
   });
-  // Las compras se registran solo en DB.compras, NO en gastos
-  saveDB();toast(`Compra ${cmp.codigo} — ${fmt(total)} registrada!`,'success');
+  // Preguntar si esta compra se pagó con dinero de la caja
+  if(est==='pagado'){
+    const deCaja=confirm('💰 ¿Esta compra de '+fmt(total)+' se pagó con dinero de la caja?\n\nSí = se resta de las ganancias del día\nNo = se pagó con otro dinero (no afecta la caja)');
+    cmp.afectaCaja=deCaja;
+    DB.compras[0]=cmp;
+  }
+  saveDB();toast('Compra '+cmp.codigo+' — '+fmt(total)+' registrada!','success');
   closeMod('mo-compra');citems=[];
   renderProds();renderComprasProds();renderDash();
   // Show recibo compra
