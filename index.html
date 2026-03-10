@@ -888,6 +888,7 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
           oninput="vFiltrarCli(this.value)" style="width:100%">
         <datalist id="v-cli-list"></datalist>
         <input type="hidden" id="v-cli-id">
+        <div id="v-cli-msg" style="display:none;margin-top:.3rem;font-size:.75rem;padding:.3rem .6rem;border-radius:6px;font-weight:600"></div>
       </div>
       <div class="fgr"><label>O nombre nuevo</label><input id="v-clin" placeholder="Nuevo cliente"></div>
       <div class="fgr"><label>Método Pago</label><select id="v-pago" onchange="vCheckPago()"><option>Efectivo</option><option>Yappy</option><option>Transferencia</option><option>Tarjeta</option><option value="credito">📋 Crédito/Cuotas</option><option>Cheque</option><option>Otro</option></select></div>
@@ -1702,22 +1703,33 @@ function vCheckPago(){
   if(cuotasRow)cuotasRow.style.display=(pago==='credito'||$('v-est').value==='credito')?'':'none';
 }
 function vFiltrarCli(val){
-  // Al seleccionar del datalist, buscar el cliente y guardar su id
   const nomBusca=val.replace(/ — FIADO.*/,'').trim().toLowerCase();
   const cli=DB.clientes.find(c=>c.nombre.toLowerCase()===nomBusca);
   const idInp=$('v-cli-id');
   const row=$('v-saldo-cli-row');
   const inp=$('v-saldo-cli');
+  const msg=$('v-cli-msg');
+  // Verificar si hay coincidencia parcial mientras escribe
+  const hayCoincidencia=val.trim().length>0&&DB.clientes.some(c=>c.nombre.toLowerCase().includes(val.trim().toLowerCase()));
   if(cli){
+    // Cliente encontrado exactamente
     if(idInp)idInp.value=cli.id;
     if($('v-clin'))$('v-clin').value='';
     if(cli.fiado>0&&row&&inp){row.style.display='';inp.value='$'+cli.fiado.toFixed(2)+' pendiente';}
     else if(row)row.style.display='none';
-    // Marcar verde para confirmar selección
     if($('v-cli-txt'))$('v-cli-txt').style.borderColor='var(--green)';
+    if(msg){msg.style.display='block';msg.style.background='rgba(0,217,126,.15)';msg.style.color='var(--green)';msg.textContent='✅ Cliente encontrado: '+cli.nombre;}
+  }else if(val.trim().length>0&&!hayCoincidencia){
+    // No existe ni coincidencia — avisar que registre en nombre nuevo
+    if(idInp)idInp.value='';
+    if($('v-cli-txt'))$('v-cli-txt').style.borderColor='var(--orange)';
+    if(msg){msg.style.display='block';msg.style.background='rgba(255,140,0,.15)';msg.style.color='var(--orange)';msg.textContent='⚠️ Cliente no existe — escribe el nombre en "O nombre nuevo" para registrarlo';}
+    if(row)row.style.display='none';
   }else{
+    // Campo vacío o hay coincidencias parciales — limpiar
     if(idInp)idInp.value='';
     if($('v-cli-txt'))$('v-cli-txt').style.borderColor='';
+    if(msg)msg.style.display='none';
     if(row)row.style.display='none';
   }
 }
