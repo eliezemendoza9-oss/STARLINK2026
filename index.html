@@ -461,31 +461,6 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
     </div>
   </div>
 
-  <!-- TABLA DE EGRESOS DEL DÍA -->
-  <div class="card" style="border-color:var(--red);border-width:2px;margin-bottom:.75rem">
-    <div class="ct" style="color:var(--red);margin-bottom:.75rem">📤 DETALLE DE EGRESOS DEL DÍA</div>
-    <div id="tabla-egresos-wrap">
-      <table style="width:100%;border-collapse:collapse;font-size:.78rem">
-        <thead>
-          <tr style="background:#1a0a0a;color:var(--red)">
-            <th style="padding:.4rem .6rem;text-align:left">Tipo</th>
-            <th style="padding:.4rem .6rem;text-align:left">Descripción</th>
-            <th style="padding:.4rem .6rem;text-align:left">Categoría</th>
-            <th style="padding:.4rem .6rem;text-align:left">Hora</th>
-            <th style="padding:.4rem .6rem;text-align:right">Monto</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-egresos-body">
-          <tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--muted)">Sin egresos hoy</td></tr>
-        </tbody>
-      </table>
-      <div style="display:flex;justify-content:flex-end;margin-top:.5rem;font-weight:800;font-size:.9rem">
-        <span style="color:var(--muted);margin-right:1rem">TOTAL EGRESOS:</span>
-        <span id="tabla-egresos-total" style="color:var(--red)">$0.00</span>
-      </div>
-    </div>
-  </div>
-
   <!-- CONTEO DE EFECTIVO POR DENOMINACIONES -->
   <div class="card" style="border-color:var(--accent3);border-width:2px">
     <div class="ct" style="color:var(--accent3)">💵 CONTEO DE CAJA — DENOMINACIONES PANAMEÑAS</div>
@@ -914,7 +889,7 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
         <datalist id="v-cli-list"></datalist>
         <input type="hidden" id="v-cli-id">
       </div>
-      <div class="fgr"><label>O nombre nuevo</label><input id="v-clin" placeholder="Nuevo cliente (si no existe)"></div>
+      <div class="fgr"><label>O nombre nuevo</label><input id="v-clin" placeholder="Nuevo cliente"></div>
       <div class="fgr"><label>Método Pago</label><select id="v-pago" onchange="vCheckPago()"><option>Efectivo</option><option>Yappy</option><option>Transferencia</option><option>Tarjeta</option><option value="credito">📋 Crédito/Cuotas</option><option>Cheque</option><option>Otro</option></select></div>
       <div class="fgr"><label>Estado</label><select id="v-est"><option value="pagado">✅ Pagado al contado</option><option value="credito">💳 Crédito / Cuotas</option><option value="fiado">📋 Fiado</option><option value="pendiente">⏳ Pendiente</option></select></div>
       <div class="fgr" id="v-cuotas-row" style="display:none"><label>N° Cuotas</label><input type="number" id="v-cuotas" value="1" min="1" max="36" placeholder="Ej: 3"></div>
@@ -1352,7 +1327,7 @@ function showSyncStatus(st){
 const $=id=>document.getElementById(id);
 const fmt=n=>isNaN(n)?'$0.00':'$'+(parseFloat(n)||0).toFixed(2);
 const hoy=()=>new Date().toISOString().split('T')[0];
-const hoyStr=()=>nowPA().toDateString();
+const hoyStr=()=>new Date().toDateString();
 const nowStr=()=>new Date().toLocaleString('es-ES',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 function pad(n,l=3){return String(n).padStart(l,'0');}
 const catL={internet:'🌐 Internet',servicio:'🔧 Servicio',producto:'📦 Producto',otro:'📌 Otro'};
@@ -1361,12 +1336,8 @@ const trnL={manana:'🌅 Mañana',tarde:'🌇 Tarde',completo:'🌐 Completo'};
 const estBadge={pagado:'bg-g',pendiente:'bg-y',fiado:'bg-r',parcial:'bg-o'};
 
 // CLOCK
-function nowPA(){
-  // Siempre hora de Panamá UTC-5 sin importar el navegador
-  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Panama'}));
-}
 function tick(){
-  const n=nowPA();
+  const n=new Date();
   $('clk').textContent=n.toLocaleTimeString('es-ES');
   $('clk-d').textContent=n.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit',month:'short'});
 }
@@ -1454,13 +1425,8 @@ function programarAlertaCierre(trn){
   cierre.setHours(hCierre,0,0,0);
   const ms=cierre-ahora;
   if(ms<=0){
-    // Solo bloquear si realmente pasó la hora HOY
-    const ahoraH=nowPA().getHours();
-    const bloqueado=(trn==='manana'&&ahoraH>=15)||(trn==='tarde'&&ahoraH>=22)||((trn==='completo'||trn==='')&&ahoraH>=22);
-    if(bloqueado){
-      activarBloqueoTurno(trn);
-    }
-    // Si no pasó la hora, no hacer nada (turno válido)
+    // Ya pasó la hora — bloquear inmediatamente
+    activarBloqueoTurno(trn);
     return;
   }
   setTimeout(()=>{
@@ -1508,7 +1474,7 @@ function cerrarSesion(){
   $('hdr-trn').style.display='none';$('hdr-trn-ind').style.display='none';
   // Reconstruir grids y mostrar login
   buildLoginGrids();
-  const h_=nowPA().getHours();
+  const h_=new Date().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   $('lo').style.display='flex';
   toast('Sesión cerrada','info');
@@ -1566,7 +1532,7 @@ function confirmarCierre(){
 }
 
 function calcArqueoHoy(){
-  const h=nowPA().toDateString();
+  const h=hoyStr();
   const venH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===h);
   const slH=DB.slVentas.filter(v=>new Date(v.fecha+'T00:00').toDateString()===h);
   const gasH=DB.gastos.filter(g=>new Date(g.fecha).toDateString()===h);
@@ -1582,14 +1548,9 @@ function calcArqueoHoy(){
     +slH.filter(v=>v.pago==='Efectivo').reduce((s,v)=>s+v.precio,0);
   const transfer=venH.filter(v=>v.pago==='Transferencia'&&v.estado!=='fiado').reduce((s,v)=>s+v.total,0)
     +slH.filter(v=>v.pago==='Transferencia').reduce((s,v)=>s+v.precio,0);
-  // Compras del día como egreso (ej: factura Starlink)
-  const compH=DB.compras.filter(c=>new Date(c.fecha).toDateString()===h);
-  // Restar: compras marcadas como 'afecta caja' O compras de proveedor Starlink
-  const egCompras=compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).reduce((s,c)=>s+(c.pagado||0),0);
   const ingresoTotal=ingVentas+ingSL+ingPres;
-  const egresoTotal=egGastos+egPres+egCompras; // incluye compras de caja para mostrar total egresos
-  const netoVentas=ingVentas+ingSL-egGastos-egPres; // neto puro de ventas sin compras
-  return{venH,slH,gasH,compH,ingVentas,ingSL,ingPres,egGastos,egPres,egCompras,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,netoVentas,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
+  const egresoTotal=egGastos+egPres;
+  return{venH,slH,gasH,ingVentas,ingSL,ingPres,egGastos,egPres,ingFiado,efectivo,transfer,ingresoTotal,egresoTotal,neto:ingresoTotal-egresoTotal,nVentas:venH.length+slH.length};
 }
 
 function renderCaja(){
@@ -1609,35 +1570,9 @@ function renderCaja(){
   $('arq-egresos').innerHTML=`
     <div class="flow-row"><div class="flow-icon">📤</div><div class="flow-info"><div class="flow-nm">Gastos</div><div class="flow-dt">${A.gasH.length} registros</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egGastos)}</div></div>
     <div class="flow-row"><div class="flow-icon">💳</div><div class="flow-info"><div class="flow-nm">Préstamos Dados</div><div class="flow-dt">Salidas de capital</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egPres)}</div></div>
-    ${A.egCompras>0?`<div class="flow-row"><div class="flow-icon">📦</div><div class="flow-info"><div class="flow-nm">Compras pagadas de caja</div><div class="flow-dt">${A.compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).length} facturas (Starlink, insumos, etc.)</div></div><div class="flow-amt" style="color:var(--red)">${fmt(A.egCompras)}</div></div>`:''}
     <div class="flow-row"><div class="flow-icon">📋</div><div class="flow-info"><div class="flow-nm">Fiados</div><div class="flow-dt">Por cobrar</div></div><div class="flow-amt" style="color:var(--accent3)">${fmt(A.ingFiado)}</div></div>`;
   $('arq-neto').textContent=fmt(A.neto);
   $('arq-neto').style.color=A.neto>=0?'var(--green)':'var(--red)';
-
-  // Tabla de egresos — gastos + compras de caja
-  const egRows=[];
-  A.gasH.forEach(g=>{
-    egRows.push({tipo:'Gasto',desc:g.desc,cat:g.cat||'—',hora:new Date(g.fecha).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),monto:g.monto});
-  });
-  A.compH.filter(c=>c.afectaCaja===true||(c.afectaCaja===undefined&&(c.provNom||'').toLowerCase().includes('starlink'))).forEach(c=>{
-    egRows.push({tipo:'Compra/Factura',desc:c.provNom||'Sin proveedor',cat:(c.items||[]).map(i=>i.nom).join(', ')||'—',hora:new Date(c.fecha).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),monto:c.pagado||0});
-  });
-  egRows.sort((a,b)=>a.hora.localeCompare(b.hora));
-  const tbEg=$('tabla-egresos-body');
-  if(tbEg){
-    tbEg.innerHTML=egRows.length?egRows.map(r=>`
-      <tr style="border-bottom:1px solid rgba(255,71,87,.15)">
-        <td style="padding:.35rem .6rem"><span style="background:${r.tipo==='Gasto'?'rgba(255,71,87,.2)':'rgba(255,140,0,.2)'};color:${r.tipo==='Gasto'?'var(--red)':'var(--orange)'};padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:700">${r.tipo}</span></td>
-        <td style="padding:.35rem .6rem;font-weight:600">${r.desc}</td>
-        <td style="padding:.35rem .6rem;color:var(--muted)">${r.cat}</td>
-        <td style="padding:.35rem .6rem;color:var(--muted)">${r.hora}</td>
-        <td style="padding:.35rem .6rem;text-align:right;color:var(--red);font-weight:700">-${fmt(r.monto)}</td>
-      </tr>`).join('')
-      :'<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--muted)">Sin egresos hoy</td></tr>';
-    const totalEg=egRows.reduce((s,r)=>s+r.monto,0);
-    const telEl=$('tabla-egresos-total');
-    if(telEl)telEl.textContent=fmt(totalEg);
-  }
 
   // Turnos del día
   const h=hoyStr();
@@ -1749,11 +1684,10 @@ function openModVenta(){
   vitems=[];
   // populate selects
   // Llenar datalist para búsqueda dinámica
-const dlCli=$('v-cli-list');
-if(dlCli)dlCli.innerHTML=DB.clientes.map(c=>`<option data-id="${c.id}" value="${c.nombre}${c.fiado>0?' — FIADO:$'+c.fiado.toFixed(2):''}">`).join('');
-$('v-cli-txt').value='';
-$('v-cli-id').value='';
-  // v-cli removido — ahora se usa v-cli-txt con vFiltrarCli
+  const dlCli=$('v-cli-list');
+  if(dlCli)dlCli.innerHTML=DB.clientes.map(c=>`<option value="${c.nombre}${c.fiado>0?' — FIADO:$'+c.fiado.toFixed(2):''}">`).join('');
+  if($('v-cli-txt')){$('v-cli-txt').value='';$('v-cli-txt').style.borderColor='';}
+  if($('v-cli-id'))$('v-cli-id').value='';
   $('v-psel').innerHTML='<option value="">-- Seleccionar producto --</option>'+DB.productos.filter(p=>p.activo).map(p=>`<option value="${p.id}" data-p="${p.pvta}" data-u="${p.und}">[${p.codigo}] ${p.nombre} — ${fmt(p.pvta)}/${undL[p.und]||p.und}</option>`).join('');
   $('v-folio').value='VTA-'+pad(DB.nextId.vta,5);
   $('v-fhora').value=nowStr();
@@ -1768,19 +1702,23 @@ function vCheckPago(){
   if(cuotasRow)cuotasRow.style.display=(pago==='credito'||$('v-est').value==='credito')?'':'none';
 }
 function vFiltrarCli(val){
-  // Buscar si el texto coincide exactamente con un cliente
-  const v=val.toLowerCase().replace(/ — FIADO.*/,'').trim();
-  const cli=DB.clientes.find(c=>c.nombre.toLowerCase()===v);
+  // Al seleccionar del datalist, buscar el cliente y guardar su id
+  const nomBusca=val.replace(/ — FIADO.*/,'').trim().toLowerCase();
+  const cli=DB.clientes.find(c=>c.nombre.toLowerCase()===nomBusca);
+  const idInp=$('v-cli-id');
+  const row=$('v-saldo-cli-row');
+  const inp=$('v-saldo-cli');
   if(cli){
-    $('v-cli-id').value=cli.id;
-    $('v-clin').value='';
-    // Mostrar fiado si tiene
-    const row=$('v-saldo-cli-row');
-    const inp=$('v-saldo-cli');
-    if(cli.fiado>0&&row&&inp){row.style.display='';inp.value='$'+cli.fiado.toFixed(2);}
+    if(idInp)idInp.value=cli.id;
+    if($('v-clin'))$('v-clin').value='';
+    if(cli.fiado>0&&row&&inp){row.style.display='';inp.value='$'+cli.fiado.toFixed(2)+' pendiente';}
     else if(row)row.style.display='none';
+    // Marcar verde para confirmar selección
+    if($('v-cli-txt'))$('v-cli-txt').style.borderColor='var(--green)';
   }else{
-    $('v-cli-id').value='';
+    if(idInp)idInp.value='';
+    if($('v-cli-txt'))$('v-cli-txt').style.borderColor='';
+    if(row)row.style.display='none';
   }
 }
 function vAutoFill(){
@@ -1857,16 +1795,15 @@ function vCalcTotal(){
 function guardarVenta(){
   if(!checkTurno())return;
   if(vitems.length===0){toast('Agrega al menos un producto','error');return;}
-  const cliId=parseInt($('v-cli-id')?.value)||parseInt($('v-cli')?.value)||null;
+  const cliId=parseInt($('v-cli-id')?.value)||null;
   const nnom=$('v-clin').value.trim();
   let cliNom='General',cliIdF=cliId;
   if(nnom&&!cliId){
-    // Verificar si ya existe un cliente con ese nombre
     const existe=DB.clientes.find(c=>c.nombre.toLowerCase()===nnom.toLowerCase());
     if(existe){
       const esMismo=confirm('⚠️ Ya existe un cliente llamado "'+existe.nombre+'"\n\n¿Es el mismo cliente?\n\nSí = usar el existente\nNo = crear nuevo con número diferenciador');
       if(esMismo){cliIdF=existe.id;cliNom=existe.nombre;}
-      else{const nc={id:DB.nextId.cli++,codigo:'CLI-'+pad(DB.nextId.cli),nombre:nnom+' ('+(DB.clientes.filter(c=>c.nombre.toLowerCase()===nnom.toLowerCase()).length+1)+')',tel:'',email:'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0};DB.clientes.push(nc);cliIdF=nc.id;cliNom=nc.nombre;}
+      else{const iguales=DB.clientes.filter(c=>c.nombre.toLowerCase()===nnom.toLowerCase()).length;const nc={id:DB.nextId.cli++,codigo:'CLI-'+pad(DB.nextId.cli),nombre:nnom+' ('+(iguales+1)+')',tel:'',email:'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0};DB.clientes.push(nc);cliIdF=nc.id;cliNom=nc.nombre;}
     }else{const nc={id:DB.nextId.cli++,codigo:'CLI-'+pad(DB.nextId.cli),nombre:nnom,tel:'',email:'',dir:'',notas:'',totalGastado:0,compras:0,fiado:0};DB.clientes.push(nc);cliIdF=nc.id;cliNom=nc.nombre;}
   }else if(cliId){cliNom=DB.clientes.find(c=>c.id===cliId)?.nombre||'?';}
   const sub=vitems.reduce((s,i)=>s+i.sub,0);
@@ -2427,13 +2364,11 @@ function openModCli(id){
 }
 function guardarCli(){
   const eid=$('cl-eid').value;const nom=$('cl-nom').value.trim();if(!nom){toast('Ingresa nombre','error');return;}
-  // Si es cliente NUEVO, verificar duplicado
   if(!eid){
     const existe=DB.clientes.find(c=>c.nombre.toLowerCase()===nom.toLowerCase());
     if(existe){
-      const esMismo=confirm('⚠️ Ya existe un cliente llamado "'+existe.nombre+'"\n\n¿Es el mismo cliente?\n\nSí = cancelar y usar el existente\nNo = crear nuevo con número diferenciador');
+      const esMismo=confirm('⚠️ Ya existe un cliente llamado "'+existe.nombre+'"\n\n¿Es el mismo cliente?\n\nSí = cancelar (usar el existente)\nNo = crear nuevo con número diferenciador');
       if(esMismo){toast('Usa el cliente existente: '+existe.nombre,'info');return;}
-      // Crear con diferenciador
       const iguales=DB.clientes.filter(c=>c.nombre.toLowerCase()===nom.toLowerCase()).length;
       $('cl-nom').value=nom+' ('+(iguales+1)+')';
     }
@@ -2592,14 +2527,12 @@ function renderDash(){
     <div class="sc-l">${lbl}</div>${sub?`<div class="sc-s">${sub}</div>`:''}
     ${page?'<div style="font-size:.6rem;color:var(--muted);margin-top:.25rem;letter-spacing:.5px">VER →</div>':''}
   </div>`;
-  const dineroDisp=A.efectivo-A.egCompras;
   $('sg-dash').innerHTML=
-    sc('💰',fmt(A.netoVentas),'Neto del Día',`Ing:${fmt(A.ingresoTotal)} Eg:${fmt(A.egresoTotal)}`,A.netoVentas>=0?'var(--green)':'var(--red)','caja')+
+    sc('💰',fmt(A.neto),'Neto del Día',`Ing:${fmt(A.ingresoTotal)} Eg:${fmt(A.egresoTotal)}`,A.neto>=0?'var(--green)':'var(--red)','caja')+
     sc('🧾',A.nVentas,'Trans. Hoy',`${A.venH.length} ventas + ${A.slH.length} SL`,null,'ventas')+
     sc('🛰️',A.slH.length,'Starlink Hoy',`${fmt(A.ingSL)} recaudado`,'var(--accent)','starlink')+
-    sc('💵',fmt(A.efectivo),'Efectivo en Caja','Total cobrado hoy','var(--accent)','caja')+
-    sc('💰',fmt(dineroDisp),'Dinero Disponible','Efectivo - Facturas pagadas',dineroDisp>=0?'var(--green)':'var(--red)','caja')+
-    sc('📤',fmt(A.egresoTotal),'Egresos Hoy',`Gastos+Compras caja`,'var(--red)','gastos')+
+    sc('💵',fmt(A.efectivo),'Efectivo','En caja','var(--accent)','caja')+
+    sc('📤',fmt(A.egresoTotal),'Egresos Hoy',null,'var(--red)','gastos')+
     sc('💸',fmt(presPend),'Por Cobrar',`Préstamos activos`,'var(--orange)','prestamos')+
     sc('⚠️',stockBajo,'Stock Bajo',stockBajo>0?'Revisar productos':'Todo OK',stockBajo>0?'var(--red)':'var(--green)','inventario')+
     sc('👥',DB.clientes.length,'Clientes',null,null,'clientes');
@@ -3245,13 +3178,6 @@ function guardarCompra(){
     notas:$('cmp-notas').value,
     cajId:SES.cajId,cajNom:SES.cajNom
   };
-  // Preguntar ANTES de guardar si es egreso de caja
-  if(est==='pagado'){
-    const deCaja=confirm('📤 EGRESO DE CAJA\n\n¿Esta compra/factura de '+fmt(total)+' se pagó con el dinero generado en ventas?\n\n✅ SÍ = se registra como egreso y se resta del dinero disponible\n❌ NO = se registra solo en compras sin afectar la caja');
-    cmp.afectaCaja=deCaja;
-  }else{
-    cmp.afectaCaja=false; // pendiente de pago — no afecta caja aún
-  }
   if(!DB.compras)DB.compras=[];
   DB.compras.unshift(cmp);
   // Update stock
@@ -3259,7 +3185,8 @@ function guardarCompra(){
     const p=DB.productos.find(x=>x.id===it.pid);
     if(p){p.stock+=it.qty;p.costo=it.pu;}
   });
-  saveDB();toast('Compra '+cmp.codigo+' — '+fmt(total)+' registrada!','success');
+  // Las compras se registran solo en DB.compras, NO en gastos
+  saveDB();toast(`Compra ${cmp.codigo} — ${fmt(total)} registrada!`,'success');
   closeMod('mo-compra');citems=[];
   renderProds();renderComprasProds();renderDash();
   // Show recibo compra
@@ -3434,7 +3361,7 @@ function toggleAI(){
   if(aiOpen){
     p.classList.add('open');
     if(aiHistory.length===0){
-      const h=nowPA().getHours();
+      const h=new Date().getHours();
       const sal=h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches';
       addAIMsg('bot',`¡${sal}! Soy el asistente IA de SERVICIOSEM 🤖\n\nConozco todos los datos de tu negocio en tiempo real. ¿En qué te ayudo?`);
     }
@@ -3850,25 +3777,19 @@ loadDB();
 function initApp(){
   buildLoginGrids();
   initSync(); // Cargar datos desde nube al iniciar
-  const h_=nowPA().getHours();
+  const h_=new Date().getHours();
   $('lo-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if($('cc-trn'))$('cc-trn').value=h_>=15?'tarde':h_>=8?'manana':'completo';
   if(SES&&SES.cajId){
     updateHdrCajero();
     renderDash();
-    // Verificar si el turno activo ya venció — solo si es turno DE HOY
-    const ahoraH=nowPA().getHours();
+    // Verificar si el turno activo ya venció
+    const ahoraH=new Date().getHours();
     const trnAct=SES.trn||'';
-    const trnObj=DB.turnos&&DB.turnos.find(t=>t.id===SES.trnId);
-    const trnHoy=trnObj&&new Date(trnObj.apertura).toDateString()===nowPA().toDateString();
-    if(trnHoy&&(trnAct==='manana'&&ahoraH>=15)){
-      setTimeout(()=>activarBloqueoTurno(trnAct),1000);
-    }else if(trnHoy&&((trnAct==='tarde'||trnAct==='completo')&&ahoraH>=22)){
+    if((trnAct==='manana'&&ahoraH>=15)||(trnAct==='tarde'&&ahoraH>=22)||(trnAct==='completo'&&ahoraH>=22)){
       setTimeout(()=>activarBloqueoTurno(trnAct),1000);
     }else{
-      // Turno de otro día o aún vigente — solo programar alerta si es hoy
-      if(trnHoy) programarAlertaCierre(trnAct);
-      // Si es de otro día, no bloquear — dejar vender normalmente
+      programarAlertaCierre(trnAct);
     }
   }else{
     // Verificar si quedó un turno abierto sin cerrar
