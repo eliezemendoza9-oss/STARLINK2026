@@ -860,11 +860,27 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
     <div class="fg">
       <div class="fgr"><label>Cliente</label><select id="sl-cli"></select></div>
       <div class="fgr"><label>O nombre nuevo</label><input id="sl-clin" placeholder="Nombre nuevo..."></div>
-      <div class="fgr"><label>Bloque</label><select id="sl-bl" onchange="slUpdateCierre()"><option value="manana">🌅 Mañana (8am–3pm)</option><option value="tarde">🌇 Tarde (3pm–10pm)</option></select></div>
-      <div class="fgr"><label>Hora Entrada</label><input type="time" id="sl-he" oninput="slUpdateCierre()"></div>
-      <div class="fgr"><label>Hora Cierre (auto)</label><input type="time" id="sl-hc" readonly></div>
+      <div class="fgr"><label>Tipo de Cliente</label><select id="sl-tipo" onchange="slUpdateTipo()">
+        <option value="bloque">🕐 Por Bloque ($0.25)</option>
+        <option value="diario">📅 Diario ($0.50)</option>
+        <option value="semanal">📆 Semanal ($0.50 x días)</option>
+        <option value="mensual">🗓️ Mensual ($0.50 x 30)</option>
+      </select></div>
+      <div class="fgr"><label>Bloque</label><select id="sl-bl" onchange="slUpdateCierre()"><option value="manana">🌅 Mañana (8am–3pm)</option><option value="tarde">🌇 Tarde (3pm–10pm)</option><option value="completo">🌐 Completo (8am–10pm)</option></select></div>
+      <div class="fgr" id="sl-row-he"><label>Hora Entrada</label><input type="time" id="sl-he" oninput="slUpdateCierre()"></div>
+      <div class="fgr" id="sl-row-hc"><label>Hora Cierre (auto)</label><input type="time" id="sl-hc" readonly></div>
+      <div class="fgr" id="sl-row-dias" style="display:none"><label>Días a pagar</label>
+        <input type="number" id="sl-dias" value="7" min="1" max="365" oninput="slCalcPrecio()" style="width:100%">
+      </div>
+      <div class="fgr" id="sl-row-rango" style="display:none"><label>Rango de Fechas</label>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input type="date" id="sl-fini" style="flex:1" oninput="slUpdateRango()">
+          <span style="color:var(--muted)">→</span>
+          <input type="date" id="sl-ffin" style="flex:1" readonly>
+        </div>
+      </div>
       <div class="fgr"><label>Fecha</label><input type="date" id="sl-fe"></div>
-      <div class="fgr"><label>Precio ($)</label><div class="pfx"><span>$</span><input type="number" id="sl-pr" value="0.25" min="0" step="0.01"></div></div>
+      <div class="fgr"><label>Precio ($)</label><div class="pfx"><span>$</span><input type="number" id="sl-pr" value="0.25" min="0" step="0.01" oninput="slUpdateTot()"></div></div>
       <div class="fgr"><label>Método Pago</label><select id="sl-pg"><option>Efectivo</option><option>Transferencia</option><option>Otro</option></select></div>
       <div class="fgr" style="grid-column:1/-1"><label>Notas</label><textarea id="sl-nt" rows="1" placeholder="Notas..."></textarea></div>
     </div>
@@ -1337,8 +1353,19 @@ const trnL={manana:'🌅 Mañana',tarde:'🌇 Tarde',completo:'🌐 Completo'};
 const estBadge={pagado:'bg-g',pendiente:'bg-y',fiado:'bg-r',parcial:'bg-o'};
 
 // CLOCK
+function nowPA(){
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Panama'}));
+}
+function hoyPA(){
+  const n=nowPA();
+  return n.getFullYear()+'-'+pad(n.getMonth()+1,2)+'-'+pad(n.getDate(),2);
+}
+function nowStrPA(){
+  const n=nowPA();
+  return n.getFullYear()+'-'+pad(n.getMonth()+1,2)+'-'+pad(n.getDate(),2)+'T'+pad(n.getHours(),2)+':'+pad(n.getMinutes(),2)+':'+pad(n.getSeconds(),2);
+}
 function tick(){
-  const n=new Date();
+  const n=nowPA();
   $('clk').textContent=n.toLocaleTimeString('es-ES');
   $('clk-d').textContent=n.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit',month:'short'});
 }
@@ -1534,9 +1561,9 @@ function confirmarCierre(){
 
 function calcArqueoHoy(){
   const h=hoyStr();
-  const venH=DB.ventas.filter(v=>new Date(v.fecha).toDateString()===h);
-  const slH=DB.slVentas.filter(v=>new Date(v.fecha+'T00:00').toDateString()===h);
-  const gasH=DB.gastos.filter(g=>new Date(g.fecha).toDateString()===h);
+  const venH=DB.ventas.filter(v=>(v.fecha||'').substring(0,10)===hoyPA());
+  const slH=DB.slVentas.filter(v=>(v.fechaDia||v.fecha||'').substring(0,10)===hoyPA());
+  const gasH=DB.gastos.filter(g=>(g.fecha||'').substring(0,10)===hoyPA());
   const presRecH=DB.prestamos.filter(p=>p.tipo==='recibido'&&new Date(p.fecha).toDateString()===h);
   const presDadH=DB.prestamos.filter(p=>p.tipo==='dado'&&new Date(p.fecha).toDateString()===h);
   const ingVentas=venH.reduce((s,v)=>s+(v.estado!=='fiado'?v.total:0),0);
@@ -1600,16 +1627,84 @@ function renderCaja(){
 // STARLINK
 // ═══════════════════════════════════════════════════════════
 function openModSL(){
-  const now=new Date();const h=now.getHours();
+  const now=nowPA();const h=now.getHours();
   $('sl-bl').value=h<15?'manana':'tarde';
   $('sl-he').value=`${pad(h,2)}:${pad(now.getMinutes(),2)}`;
-  $('sl-fe').value=hoy();
+  $('sl-fe').value=hoyPA();
   $('sl-cli').innerHTML='<option value="">-- Seleccionar --</option>'+DB.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
-  $('sl-clin').value='';slUpdateCierre();openMod('mo-sl');
+  $('sl-clin').value='';$('sl-tipo').value='bloque';$('sl-fini').value=hoyPA();slUpdateTipo();slUpdateCierre();openMod('mo-sl');
+}
+function slUpdateTot(){
+  $('sl-tot').textContent=fmt(parseFloat($('sl-pr').value)||0);
+}
+function slUpdateRango(){
+  const tipo=$('sl-tipo').value;
+  const fini=$('sl-fini').value;
+  if(!fini)return;
+  const d=new Date(fini+'T12:00:00');
+  if(tipo==='semanal'){
+    const dias=parseInt($('sl-dias')?.value)||7;
+    d.setDate(d.getDate()+(dias-1));
+  }else if(tipo==='mensual'){
+    d.setDate(d.getDate()+29); // 30 días
+  }
+  $('sl-ffin').value=d.toISOString().split('T')[0];
+}
+function slCalcPrecio(){
+  const tipo=$('sl-tipo').value;
+  const bl=$('sl-bl').value;
+  // 1 bloque = $0.25 | diario (2 bloques) = $0.50
+  const pxDia=0.50; // mañana+tarde = 2 bloques x $0.25
+  const pxBloque=0.25; // 1 solo bloque
+  if(tipo==='bloque'){
+    $('sl-pr').value=pxBloque.toFixed(2);
+  }else if(tipo==='diario'){
+    $('sl-pr').value=pxDia.toFixed(2);
+  }else if(tipo==='semanal'){
+    const dias=parseInt($('sl-dias')?.value)||7;
+    $('sl-pr').value=(pxDia*dias).toFixed(2);
+    slUpdateRango();
+  }else if(tipo==='mensual'){
+    $('sl-pr').value=(pxDia*30).toFixed(2); // $0.50 x 30 = $15.00
+    slUpdateRango();
+  }
+  slUpdateTot();
+}
+function slUpdateTipo(){
+  const tipo=$('sl-tipo').value;
+  const rowHe=$('sl-row-he'),rowHc=$('sl-row-hc'),rowRango=$('sl-row-rango'),rowDias=$('sl-row-dias');
+  // Mostrar/ocultar campos según tipo
+  if(tipo==='bloque'){
+    if(rowHe)rowHe.style.display='';
+    if(rowHc)rowHc.style.display='';
+    if(rowRango)rowRango.style.display='none';
+    if(rowDias)rowDias.style.display='none';
+  }else if(tipo==='diario'){
+    if(rowHe)rowHe.style.display='none';
+    if(rowHc)rowHc.style.display='none';
+    if(rowRango)rowRango.style.display='none';
+    if(rowDias)rowDias.style.display='none';
+  }else if(tipo==='semanal'){
+    if(rowHe)rowHe.style.display='none';
+    if(rowHc)rowHc.style.display='none';
+    if(rowRango)rowRango.style.display='';
+    if(rowDias)rowDias.style.display='';
+    if($('sl-dias'))$('sl-dias').value='7';
+    slUpdateRango();
+  }else if(tipo==='mensual'){
+    if(rowHe)rowHe.style.display='none';
+    if(rowHc)rowHc.style.display='none';
+    if(rowRango)rowRango.style.display='';
+    if(rowDias)rowDias.style.display='none';
+    slUpdateRango();
+  }
+  slCalcPrecio();
 }
 function slUpdateCierre(){
-  $('sl-hc').value=$('sl-bl').value==='manana'?'15:00':'22:00';
-  $('sl-tot').textContent=fmt($('sl-pr').value);
+  const bl=$('sl-bl').value;
+  $('sl-hc').value=bl==='manana'?'15:00':bl==='completo'?'22:00':'22:00';
+  slUpdateTipo();
+  $('sl-tot').textContent=fmt(parseFloat($('sl-pr').value)||0);
 }
 function guardarSL(){
   if(!checkTurno())return;
@@ -1619,13 +1714,19 @@ function guardarSL(){
   else if(cliId){cliNom=DB.clientes.find(c=>c.id===cliId)?.nombre||'?';}
   const bl=$('sl-bl').value;const he=$('sl-he').value;const hc=$('sl-hc').value;
   const fe=$('sl-fe').value;const pr=parseFloat($('sl-pr').value)||0;const pg=$('sl-pg').value;
-  const v={id:DB.nextId.sl++,fecha:fe,cliId:cliIdF,cliNom,bl,he,hc,precio:pr,pago:pg,
+  const tipo=$('sl-tipo').value||'hora';
+  const fini=$('sl-fini').value||fe;const ffin=$('sl-ffin').value||fe;
+  const fechaGuardar=nowStrPA();
+  const v={id:DB.nextId.sl++,fecha:fechaGuardar,fechaDia:fe,tipo,fini,ffin,cliId:cliIdF,cliNom,bl,he,hc,precio:pr,pago:pg,
     notas:$('sl-nt').value,cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId,estado:'activo'};
   DB.slVentas.unshift(v);
   if(cliIdF){const c=DB.clientes.find(x=>x.id===cliIdF);if(c){c.totalGastado+=pr;c.compras++;}}
   if(SES.cajId){const cj=DB.cajeros.find(x=>x.id===SES.cajId);if(cj){cj.ventas++;cj.total+=pr;}}
   if(SES.trnId){const t=DB.turnos.find(x=>x.id===SES.trnId);if(t){t.ventas++;t.total+=pr;}}
-  saveDB();toast(`Starlink — ${cliNom} — ${fmt(pr)}`,'success');closeMod('mo-sl');renderStarlink();renderDash();
+  // Descontar inventario Starlink — buscar producto con 'starlink' en nombre
+  const slProd=DB.productos.find(p=>p.nombre&&p.nombre.toLowerCase().includes('starlink'));
+  if(slProd&&slProd.stock>0){slProd.stock--;}
+  saveDB();toast('Starlink — '+cliNom+' — '+fmt(pr),'success');closeMod('mo-sl');renderStarlink();renderDash();
 }
 function renderStarlink(){
   const slLegacy=DB.slVentas||[];
@@ -1827,7 +1928,7 @@ function guardarVenta(){
   const est=$('v-est').value;const pago=$('v-pago').value;
   const cuotas=est==='credito'?parseInt($('v-cuotas')?.value||1):1;
   const v={id:DB.nextId.vta,folio:'VTA-'+pad(DB.nextId.vta++,5),
-    fecha:new Date().toISOString(),cliId:cliIdF,cliNom,items:[...vitems],
+    fecha:nowStrPA(),cliId:cliIdF,cliNom,items:[...vitems],
     sub,desc,itbms:itbmsPct,itbmsMonto,total:tot,pago,estado:est,cuotas:cuotas||1,notas:$('v-notas').value,
     cajId:SES.cajId,cajNom:SES.cajNom,trnId:SES.trnId};
   DB.ventas.unshift(v);
@@ -2455,7 +2556,7 @@ function guardarAjInv(){
   const antes=pr.stock;
   if(tipo==='entrada'||tipo==='ajuste')pr.stock+=cant;
   else pr.stock=Math.max(0,pr.stock-cant);
-  DB.ajustesInv.unshift({fecha:new Date().toISOString(),pid,pnm:pr.nombre,pcod:pr.codigo,tipo,cant,antes,despues:pr.stock,mot,cajNom:SES.cajNom});
+  DB.ajustesInv.unshift({fecha:nowStrPA(),pid,pnm:pr.nombre,pcod:pr.codigo,tipo,cant,antes,despues:pr.stock,mot,cajNom:SES.cajNom});
   saveDB();toast(`Stock "${pr.nombre}": ${antes}→${pr.stock}`,'success');closeMod('mo-ajinv');renderInv();
 }
 function renderInv(){
@@ -2958,7 +3059,7 @@ function calcDenom(){
 }
 
 function guardarConteo(){
-  const snap={fecha:new Date().toISOString(),cajNom:SES.cajNom||'Sin sesión',trnId:SES.trnId||null,denoms:{}};
+  const snap={fecha:nowStrPA(),cajNom:SES.cajNom||'Sin sesión',trnId:SES.trnId||null,denoms:{}};
   DENOMS.forEach(d=>{snap.denoms[d.id]=parseFloat($('dn-'+d.id)?.value)||0;});
   snap.total=parseFloat(($('tot-contado').textContent||'0').replace(/[$,]/g,''))||0;
   snap.sistema=parseFloat(($('tot-sistema').textContent||'0').replace(/[$,]/g,''))||0;
