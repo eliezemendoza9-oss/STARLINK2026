@@ -1212,9 +1212,28 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
 
 <style>
 @media print{
-  .mq,.header,.hdr-mid,.hdr-r,nav,.btn,button{display:none!important;}
-  .recibo{box-shadow:none;border:1px solid #ccc;}
-  body{background:#fff;color:#000;}
+  /* Ocultar todo excepto el recibo */
+  body > *:not(#mo-recibo){display:none!important;}
+  .mo{position:static!important;background:transparent!important;padding:0!important;}
+  .md{box-shadow:none!important;max-width:100%!important;border-radius:0!important;background:transparent!important;}
+  .mh,.fr,.btn,button,.mc{display:none!important;}
+  /* CLAVE: forzar colores de fondo al imprimir */
+  *{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+    color-adjust:exact!important;
+  }
+  body{background:#fff!important;margin:0;padding:0;}
+  .recibo{
+    box-shadow:none!important;
+    border-radius:8px!important;
+    max-width:100%!important;
+    margin:0 auto!important;
+    page-break-inside:avoid;
+  }
+  /* Forzar que los fondos de color del recibo se impriman */
+  [style*="background"]{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  @page{margin:5mm;size:auto;}
 }
 </style>
 
@@ -1755,9 +1774,15 @@ function guardarSL(){
   if(cliIdF){const c=DB.clientes.find(x=>x.id===cliIdF);if(c){c.totalGastado+=pr;c.compras++;}}
   if(SES.cajId){const cj=DB.cajeros.find(x=>x.id===SES.cajId);if(cj){cj.ventas++;cj.total+=pr;}}
   if(SES.trnId){const t=DB.turnos.find(x=>x.id===SES.trnId);if(t){t.ventas++;t.total+=pr;}}
-  // Descontar inventario Starlink — buscar producto con 'starlink' en nombre
+  // Descontar inventario Starlink según tipo
   const slProd=DB.productos.find(p=>p.nombre&&p.nombre.toLowerCase().includes('starlink'));
-  if(slProd&&slProd.stock>0){slProd.stock--;}
+  if(slProd){
+    let bloques=1; // default bloque=1
+    if(tipo==='diario') bloques=2;
+    else if(tipo==='semanal'){const dias=parseInt($('sl-dias')?.value)||7;bloques=dias*2;}
+    else if(tipo==='mensual') bloques=60;
+    slProd.stock=Math.max(0,(slProd.stock||0)-bloques);
+  }
   saveDB();toast('Starlink — '+cliNom+' — '+fmt(pr),'success');closeMod('mo-sl');renderStarlink();renderDash();
 }
 function renderStarlink(){
@@ -2234,6 +2259,7 @@ function renderReciboContent(v,ft){
           ${reciboFila('TOTAL A PAGAR',`$${v.total.toFixed(2)}`,{big:true,border:true,color:'#006633'})}
           ${reciboFila('Estado',`${v.estado.toUpperCase()}`,{color:v.estado==='pagado'?'#006633':v.estado==='fiado'?'#cc3300':'#886600',alt:true})}
         </div>
+        ${v.notas?`<div style="margin:.5rem .8rem;padding:.4rem .6rem;background:#fffbe6;border-left:3px solid #f0a500;border-radius:4px;font-size:.7rem;color:#664d00"><strong>📝 Observaciones:</strong> ${v.notas}</div>`:''}
       </div>
       ${reciboFooter()}
     </div>`;
@@ -2260,12 +2286,20 @@ function renderReciboContent(v,ft){
           ${reciboFila('Forma de Pago',v.pago,{muted:true,alt:true})}
           ${reciboFila('Estado',v.estado.toUpperCase(),{color:v.estado==='pagado'?'#006633':v.estado==='fiado'?'#cc3300':'#886600'})}
         </div>
+        ${v.notas?`<div style="margin:.4rem .6rem;padding:.3rem .5rem;background:#fffbe6;border-left:3px solid #f0a500;border-radius:4px;font-size:.68rem;color:#664d00"><strong>📝 Obs:</strong> ${v.notas}</div>`:''}
       </div>
       ${reciboFooter()}
     </div>`;
   }
 }
-function printRecibo(){window.print();}
+function printRecibo(){
+  // Asegurar que el modal recibo esté visible antes de imprimir
+  const mo=$('mo-recibo');
+  if(mo)mo.style.display='flex';
+  setTimeout(()=>{
+    window.print();
+  },200);
+}
 
 // ═══════════════════════════════════════════════════════════
 // GASTOS
@@ -2892,13 +2926,18 @@ function renderReciboSLContent(id,ft){
         <div style="padding:.5rem .8rem;background:#f0fff8;border-bottom:1px dashed #aad;text-align:center">
           <div style="font-size:.6rem;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:.3rem">Servicio Contratado</div>
           <div style="font-size:1rem;font-weight:900;color:#1a4a2a">${blL[v.bl]||v.bl}</div>
-          <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:.4rem;font-size:.78rem">
+          <div style="font-size:.8rem;font-weight:700;color:#006688;margin-top:.2rem">${v.tipo==='bloque'?'⏱️ Por Bloque':v.tipo==='diario'?'📅 Diario':v.tipo==='semanal'?'📆 Semanal':'🗓️ Mensual'}</div>
+          ${(v.tipo==='bloque')?`<div style="display:flex;justify-content:center;gap:1.5rem;margin-top:.4rem;font-size:.78rem">
             <div><span style="color:#888">Entrada:</span> <strong style="color:#006633">${v.he||'—'}</strong></div>
             <div><span style="color:#888">Cierre:</span> <strong style="color:#cc3300">${v.hc||'—'}</strong></div>
-          </div>
+          </div>`:''}
+          ${(v.tipo!=='bloque'&&v.fini)?`<div style="margin-top:.4rem;font-size:.78rem;color:#444">
+            <span style="color:#888">Período:</span> <strong>${v.fini}${v.ffin&&v.ffin!==v.fini?' → '+v.ffin:''}</strong>
+          </div>`:''}
         </div>
         <div style="padding:.3rem .8rem;background:#f8faff;border-top:1px dashed #ccd">
-          ${reciboFila('Precio por Sesión',`$${(v.precio||0).toFixed(2)}`,{big:true,color:'#006633',border:true})}
+          ${reciboFila('Tipo de Pago',v.tipo==='bloque'?'Por Bloque':v.tipo==='diario'?'Diario':v.tipo==='semanal'?'Semanal':'Mensual',{muted:true,alt:true})}
+          ${reciboFila('Total Pagado',`$${(v.precio||0).toFixed(2)}`,{big:true,color:'#006633',border:true})}
           ${reciboFila('Forma de Pago',v.pago,{muted:true,alt:true})}
           ${v.notas?reciboFila('Notas',v.notas,{muted:true}):''}
         </div>
