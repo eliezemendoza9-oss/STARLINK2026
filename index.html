@@ -922,10 +922,42 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
       <button class="btn bp bsm" onclick="vAddItem()" style="align-self:flex-end;margin-bottom:0">+ Add</button>
     </div>
     <!-- Campos Starlink — aparecen solo si el producto es Starlink -->
-    <div id="v-sl-row" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:.5rem;background:rgba(0,255,255,.06);border:1px solid rgba(0,255,255,.2);border-radius:8px;padding:.6rem .75rem;margin-bottom:.6rem" class="fg">
-      <div class="fgr" style="margin:0"><label>🛰️ Bloque</label><select id="v-sl-bl" onchange="vSlBl()"><option value="manana">🌅 Mañana (8am–3pm)</option><option value="tarde">🌇 Tarde (3pm–10pm)</option></select></div>
-      <div class="fgr" style="margin:0"><label>⏰ Hora Entrada</label><input type="time" id="v-sl-he"></div>
-      <div class="fgr" style="margin:0"><label>🔒 Hora Cierre</label><input type="time" id="v-sl-hc" readonly style="color:var(--muted2)"></div>
+    <div id="v-sl-row" style="display:none;background:rgba(0,255,255,.06);border:1px solid rgba(0,255,255,.2);border-radius:8px;padding:.6rem .75rem;margin-bottom:.6rem">
+      <div style="font-size:.72rem;font-weight:800;color:var(--accent);margin-bottom:.5rem;letter-spacing:.5px">🛰️ OPCIONES STARLINK</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+        <div class="fgr" style="margin:0"><label>Tipo</label>
+          <select id="v-sl-tipo" onchange="vSlTipo()">
+            <option value="bloque">🕐 Por Bloque ($0.25)</option>
+            <option value="diario">📅 Diario ($0.50)</option>
+            <option value="semanal">📆 Semanal ($0.50 x días)</option>
+            <option value="mensual">🗓️ Mensual ($15.00)</option>
+          </select>
+        </div>
+        <div class="fgr" style="margin:0"><label>🛰️ Bloque</label>
+          <select id="v-sl-bl" onchange="vSlBl()">
+            <option value="manana">🌅 Mañana (8am–3pm)</option>
+            <option value="tarde">🌇 Tarde (3pm–10pm)</option>
+            <option value="completo">🌐 Completo (8am–10pm)</option>
+          </select>
+        </div>
+      </div>
+      <div id="v-sl-hora-row" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+        <div class="fgr" style="margin:0"><label>⏰ Hora Entrada</label><input type="time" id="v-sl-he" oninput="vSlBl()"></div>
+        <div class="fgr" style="margin:0"><label>🔒 Hora Cierre</label><input type="time" id="v-sl-hc" readonly style="color:var(--muted2)"></div>
+      </div>
+      <div id="v-sl-dias-row" style="display:none;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+        <div class="fgr" style="margin:0"><label>Días a pagar</label><input type="number" id="v-sl-dias" value="7" min="1" max="365" oninput="vSlCalcPrecio()" style="width:100%"></div>
+        <div class="fgr" style="margin:0"><label>Fecha inicio</label><input type="date" id="v-sl-fini" oninput="vSlRango()" style="width:100%"></div>
+      </div>
+      <div id="v-sl-rango-row" style="display:none;margin-bottom:.5rem">
+        <div class="fgr" style="margin:0"><label>Rango</label>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input type="date" id="v-sl-fini2" style="flex:1" oninput="vSlRango()">
+            <span style="color:var(--muted)">→</span>
+            <input type="date" id="v-sl-ffin" style="flex:1" readonly>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="v-items" style="min-height:36px;margin-bottom:.5rem"></div>
     <div class="tb">
@@ -1843,14 +1875,15 @@ function vAutoFill(){
   const slRow=$('v-sl-row');
   if(!slRow)return;
   if(esSL){
-    slRow.style.display='grid';
-    const now=new Date();
+    slRow.style.display='block';
+    const now=nowPA();
     const h=now.getHours();
-    // Bloque automático por hora
     const bl=h<15?'manana':'tarde';
+    if($('v-sl-tipo'))$('v-sl-tipo').value='bloque';
     $('v-sl-bl').value=bl;
     $('v-sl-he').value=pad(h,2)+':'+pad(now.getMinutes(),2);
     $('v-sl-hc').value=bl==='manana'?'15:00':'22:00';
+    vSlTipo();
   }else{
     slRow.style.display='none';
   }
@@ -1858,6 +1891,51 @@ function vAutoFill(){
 function vSlBl(){
   const bl=$('v-sl-bl').value;
   $('v-sl-hc').value=bl==='manana'?'15:00':'22:00';
+}
+function vSlTipo(){
+  const tipo=$('v-sl-tipo')?.value||'bloque';
+  const horaRow=$('v-sl-hora-row');
+  const diasRow=$('v-sl-dias-row');
+  const rangoRow=$('v-sl-rango-row');
+  if(tipo==='bloque'){
+    if(horaRow)horaRow.style.display='grid';
+    if(diasRow)diasRow.style.display='none';
+    if(rangoRow)rangoRow.style.display='none';
+  }else if(tipo==='diario'){
+    if(horaRow)horaRow.style.display='none';
+    if(diasRow)diasRow.style.display='none';
+    if(rangoRow)rangoRow.style.display='none';
+  }else if(tipo==='semanal'){
+    if(horaRow)horaRow.style.display='none';
+    if(diasRow)diasRow.style.display='grid';
+    if(rangoRow)rangoRow.style.display='none';
+    vSlRango();
+  }else if(tipo==='mensual'){
+    if(horaRow)horaRow.style.display='none';
+    if(diasRow)diasRow.style.display='none';
+    if(rangoRow)rangoRow.style.display='block';
+    vSlRango();
+  }
+  vSlCalcPrecio();
+}
+function vSlCalcPrecio(){
+  const tipo=$('v-sl-tipo')?.value||'bloque';
+  let precio=0.25;
+  if(tipo==='bloque') precio=0.25;
+  else if(tipo==='diario') precio=0.50;
+  else if(tipo==='semanal'){const dias=parseInt($('v-sl-dias')?.value)||7;precio=0.50*dias;}
+  else if(tipo==='mensual') precio=15.00;
+  $('v-pu').value=precio.toFixed(2);vCalcLine();
+}
+function vSlRango(){
+  const tipo=$('v-sl-tipo')?.value;
+  const finiEl=tipo==='semanal'?$('v-sl-fini'):$('v-sl-fini2');
+  const fini=finiEl?.value;
+  if(!fini)return;
+  const d=new Date(fini+'T12:00:00');
+  if(tipo==='semanal'){const dias=parseInt($('v-sl-dias')?.value)||7;d.setDate(d.getDate()+(dias-1));}
+  else if(tipo==='mensual') d.setDate(d.getDate()+29);
+  if($('v-sl-ffin'))$('v-sl-ffin').value=d.toISOString().split('T')[0];
 }
 function vCalcLine(){
   const q=parseFloat($('v-qty').value)||0;const p=parseFloat($('v-pu').value)||0;
@@ -1870,9 +1948,18 @@ function vAddItem(){
   const esSL=pr&&pr.nombre.toLowerCase().includes('starlink');
   const item={pid,cod:pr.codigo,nom:pr.nombre,und:pr.und,qty,pu,sub:qty*pu};
   if(esSL){
+    const slTipo=$('v-sl-tipo')?.value||'bloque';
+    item.slTipo=slTipo;
     item.slBl=$('v-sl-bl')?.value||'manana';
     item.slHe=$('v-sl-he')?.value||'';
     item.slHc=$('v-sl-hc')?.value||'';
+    item.slFini=$('v-sl-fini')?.value||$('v-sl-fini2')?.value||'';
+    item.slFfin=$('v-sl-ffin')?.value||'';
+    item.slDias=$('v-sl-dias')?.value||'';
+    // Actualizar precio según tipo
+    vSlCalcPrecio();
+    item.pu=parseFloat($('v-pu').value)||item.pu;
+    item.sub=item.qty*item.pu;
   }
   const ex=vitems.find(i=>i.pid===pid&&i.pu===pu&&!esSL);
   if(ex){ex.qty+=qty;ex.sub=ex.qty*ex.pu;}
