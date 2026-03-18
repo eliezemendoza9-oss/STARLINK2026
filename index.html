@@ -1212,23 +1212,22 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
 
 <style>
 @media print{
-  /* Ocultar TODO y mostrar solo el recibo */
+  /* Ocultar todo menos el recibo */
+  body{background:#fff!important;}
   body > *{display:none!important;}
-  #printable-recibo{
-    display:block!important;
-    position:fixed!important;
-    top:0!important;left:0!important;
-    width:100%!important;
-    margin:0!important;
-    box-shadow:none!important;
-  }
-  /* Colores exactos */
+  #mo-recibo{display:flex!important;position:static!important;background:transparent!important;padding:0!important;}
+  #mo-recibo .mo{display:block!important;}
+  #mo-recibo .md{display:block!important;box-shadow:none!important;background:transparent!important;max-width:420px!important;margin:0 auto!important;padding:0!important;}
+  #mo-recibo .mh,#mo-recibo .fr,#mo-recibo button{display:none!important;}
+  #recibo-content{display:block!important;}
+  .recibo{display:block!important;box-shadow:none!important;}
+  /* Colores exactos — clave para no ver fondo oscuro */
   *{
     -webkit-print-color-adjust:exact!important;
     print-color-adjust:exact!important;
     color-adjust:exact!important;
   }
-  @page{margin:6mm;size:auto;}
+  @page{margin:8mm;size:auto;}
 }
 </style>
 
@@ -2258,12 +2257,18 @@ function renderReciboContent(v,ft){
           <div style="font-size:.65rem;font-weight:800;color:#1a2a4a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:.3rem;border-bottom:1.5px solid #1a2a4a;padding-bottom:.2rem">Detalle de Servicios / Productos</div>
           <table style="width:100%;font-size:.72rem;border-collapse:collapse">
             <tr style="background:#f0f4ff"><th style="text-align:left;padding:.3rem .2rem;font-size:.63rem;color:#556">Descripción</th><th style="text-align:center;padding:.3rem .2rem;font-size:.63rem;color:#556">Qty</th><th style="text-align:right;padding:.3rem .2rem;font-size:.63rem;color:#556">P.U.</th><th style="text-align:right;padding:.3rem .2rem;font-size:.63rem;color:#556">Total</th></tr>
-            ${(v.items||[]).map((it,i)=>`<tr style="background:${i%2?'#f8faff':'#fff'};border-bottom:1px solid #eef"><td style="padding:.3rem .2rem"><div style="font-weight:700;color:#1a2a4a">${it.nom}</div><div style="font-size:.6rem;color:#888">${it.cod}</div>${it.slTipo?`<div style="font-size:.6rem;color:#0088aa">🛰️ ${
-  it.slTipo==='bloque'?((it.slBl==='manana'?'Mañana 8am–3pm':it.slBl==='tarde'?'Tarde 3pm–10pm':'Completo 8am–10pm')+' · Entrada: '+(it.slHe||'—')+' · Cierre: '+(it.slHc||'—')):
-  it.slTipo==='diario'?('📅 Diario · '+it.slFini):
-  it.slTipo==='semanal'?('📆 Semanal · '+(it.slFini||'')+(it.slFfin?' → '+it.slFfin:'')):
-  ('🗓️ Mensual · '+(it.slFini||'')+(it.slFfin?' → '+it.slFfin:''))
-}</div>`:''}</td><td style="text-align:center;padding:.3rem .2rem;color:#334">${it.qty} ${undL[it.und]||it.und}</td><td style="text-align:right;padding:.3rem .2rem;color:#334">$${it.pu.toFixed(2)}</td><td style="text-align:right;padding:.3rem .2rem;font-weight:700;color:#1a4a2a">$${it.sub.toFixed(2)}</td></tr>`).join('')}
+            ${(v.items||[]).map((it,i)=>`<tr style="background:${i%2?'#f8faff':'#fff'};border-bottom:1px solid #eef"><td style="padding:.3rem .2rem"><div style="font-weight:700;color:#1a2a4a">${it.nom}</div><div style="font-size:.6rem;color:#888">${it.cod}</div>${(()=>{
+  const tipo=it.slTipo||'';
+  const nom=it.nom||'';
+  const esSL=nom.toLowerCase().includes('starlink');
+  if(!esSL)return '';
+  let txt='';
+  if(tipo==='diario') txt='📅 Tipo: Diario · Fecha: '+(it.slFini||'—');
+  else if(tipo==='semanal') txt='📆 Tipo: Semanal · '+(it.slFini||'')+(it.slFfin?' → '+it.slFfin:'');
+  else if(tipo==='mensual') txt='🗓️ Tipo: Mensual · '+(it.slFini||'')+(it.slFfin?' → '+it.slFfin:'');
+  else txt='🕐 Tipo: Bloque · '+(it.slBl==='manana'?'Mañana 8am–3pm':it.slBl==='tarde'?'Tarde 3pm–10pm':'Completo 8am–10pm')+(it.slHe?' · Entrada: '+it.slHe:'')+(it.slHc?' · Cierre: '+it.slHc:'');
+  return '<div style="font-size:.6rem;color:#0088aa;margin-top:.2rem">🛰️ '+txt+'</div>';
+})()}</td><td style="text-align:center;padding:.3rem .2rem;color:#334">${it.qty} ${undL[it.und]||it.und}</td><td style="text-align:right;padding:.3rem .2rem;color:#334">$${it.pu.toFixed(2)}</td><td style="text-align:right;padding:.3rem .2rem;font-weight:700;color:#1a4a2a">$${it.sub.toFixed(2)}</td></tr>`).join('')}
           </table>
         </div>
         <div style="padding:.3rem .8rem;background:#f8faff;border-top:1px solid #dde4f0">
