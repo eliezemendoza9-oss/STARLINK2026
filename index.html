@@ -1212,28 +1212,23 @@ tbody td{padding:.7rem 1rem;vertical-align:middle;}
 
 <style>
 @media print{
-  /* Ocultar todo excepto el recibo */
-  body > *:not(#mo-recibo){display:none!important;}
-  .mo{position:static!important;background:transparent!important;padding:0!important;}
-  .md{box-shadow:none!important;max-width:100%!important;border-radius:0!important;background:transparent!important;}
-  .mh,.fr,.btn,button,.mc{display:none!important;}
-  /* CLAVE: forzar colores de fondo al imprimir */
+  /* Ocultar TODO y mostrar solo el recibo */
+  body > *{display:none!important;}
+  #printable-recibo{
+    display:block!important;
+    position:fixed!important;
+    top:0!important;left:0!important;
+    width:100%!important;
+    margin:0!important;
+    box-shadow:none!important;
+  }
+  /* Colores exactos */
   *{
     -webkit-print-color-adjust:exact!important;
     print-color-adjust:exact!important;
     color-adjust:exact!important;
   }
-  body{background:#fff!important;margin:0;padding:0;}
-  .recibo{
-    box-shadow:none!important;
-    border-radius:8px!important;
-    max-width:100%!important;
-    margin:0 auto!important;
-    page-break-inside:avoid;
-  }
-  /* Forzar que los fondos de color del recibo se impriman */
-  [style*="background"]{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-  @page{margin:5mm;size:auto;}
+  @page{margin:6mm;size:auto;}
 }
 </style>
 
@@ -1978,6 +1973,8 @@ function vAddItem(){
   const esSL=pr&&pr.nombre.toLowerCase().includes('starlink');
   const item={pid,cod:pr.codigo,nom:pr.nombre,und:pr.und,qty,pu,sub:qty*pu};
   if(esSL){
+    // Calcular primero para que qty y pu sean correctos
+    vSlCalcPrecio();
     const slTipo=$('v-sl-tipo')?.value||'bloque';
     item.slTipo=slTipo;
     item.slBl=$('v-sl-bl')?.value||'manana';
@@ -1986,9 +1983,9 @@ function vAddItem(){
     item.slFini=$('v-sl-fini')?.value||$('v-sl-fini2')?.value||'';
     item.slFfin=$('v-sl-ffin')?.value||'';
     item.slDias=$('v-sl-dias')?.value||'';
-    // Actualizar precio según tipo
-    vSlCalcPrecio();
-    item.pu=parseFloat($('v-pu').value)||item.pu;
+    // Leer qty y pu YA actualizados por vSlCalcPrecio
+    item.qty=parseFloat($('v-qty').value)||1;
+    item.pu=parseFloat($('v-pu').value)||0.25;
     item.sub=item.qty*item.pu;
   }
   const ex=vitems.find(i=>i.pid===pid&&i.pu===pu&&!esSL);
